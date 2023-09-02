@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"database/sql"
+
+	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -29,7 +31,7 @@ func (s *Service) CheckUser(ctx context.Context, kthID, system, permission strin
 			on gp.permission_id = p.id
 			inner join all_groups ag
 			on ag.group_id = gp.group_id
-			and system = $2
+			where system = $2
 			and name = $3
 		)
 		select exists(select 1 from found)
@@ -56,7 +58,7 @@ func (s *Service) ListForUser(ctx context.Context, kthID, system string) ([]stri
 		on gp.permission_id = p.id
 		inner join all_groups ag
 		on ag.group_id = gp.group_id
-		and system = $2
+		where system = $2
 	`, kthID, system)
 	if err != nil {
 		return nil, err
@@ -71,3 +73,24 @@ func (s *Service) ListForUser(ctx context.Context, kthID, system string) ([]stri
 	}
 	return perms, nil
 }
+
+func (s *Service) CheckToken(ctx context.Context, secret uuid.UUID, system, permission string) (bool, error) {
+	row := s.db.QueryRowContext(ctx, `
+		select exists(
+			select 1 from api_tokens t
+			inner join api_tokens_permissions tp
+			on tp.api_token_id = t.id
+			inner join permissions p
+			on p.id = tp.permission_id
+			where t.secret = $1
+			and system = $2
+			and name = $3
+		)
+	`, secret, system, permission)
+	var found bool
+	if err := row.Scan(&found); err != nil {
+		return false, err
+	}
+	return found, nil
+}
+
