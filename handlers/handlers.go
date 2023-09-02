@@ -40,3 +40,34 @@ func (s *Service) CheckUser(ctx context.Context, kthID, system, permission strin
 	}
 	return found, nil
 }
+
+func (s *Service) ListForUser(ctx context.Context, kthID, system string) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		with recursive all_groups (group_id) as (
+			select group_id from groups_users
+			where kth_id = $1 and now() between start_date and end_date
+			union all
+			select supergroup_id from all_groups
+			inner join groups_groups
+			on subgroup_id = group_id
+		)
+		select name from permissions p
+		inner join groups_permissions gp
+		on gp.permission_id = p.id
+		inner join all_groups ag
+		on ag.group_id = gp.group_id
+		and system = $2
+	`, kthID, system)
+	if err != nil {
+		return nil, err
+	}
+	var perms []string
+	for rows.Next() {
+		var perm string
+		if err := rows.Scan(&perm); err != nil {
+			return nil, err
+		}
+		perms = append(perms, perm)
+	}
+	return perms, nil
+}
