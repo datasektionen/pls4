@@ -11,17 +11,8 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/datasektionen/pls4/database"
-	"github.com/datasektionen/pls4/handlers"
-	"github.com/datasektionen/pls4/routes"
+	"github.com/datasektionen/pls4/api"
 )
-
-func envOr(key string, fallback string) string {
-	value, ok := os.LookupEnv(key)
-	if !ok {
-		return fallback
-	}
-	return value
-}
 
 func main() {
 	var (
@@ -49,10 +40,17 @@ func main() {
 		panic(err)
 	}
 
-	s := handlers.NewService(db)
-
-	routes.Mount(s)
+	s := api.NewService(db)
+	api.Mount(s)
 
 	slog.Info("Started", "address", address)
 	slog.Error("Server crashed", "error", http.ListenAndServe(address, nil))
+}
+
+func envOr(key string, fallback string) string {
+	value, ok := os.LookupEnv(key)
+	if !ok {
+		return fallback
+	}
+	return value
 }

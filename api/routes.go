@@ -1,19 +1,17 @@
-package routes
+package api
 
 import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-
-	"github.com/datasektionen/pls4/handlers"
 )
 
-func Mount(s *handlers.Service) {
+func Mount(s *Service) {
 	http.HandleFunc("/api/check-user", checkUser(s))
 	http.HandleFunc("/api/list-for-user", listForUser(s))
 }
 
-func checkUser(s *handlers.Service) func(w http.ResponseWriter, r *http.Request) {
+func checkUser(s *Service) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		var body struct {
@@ -39,7 +37,7 @@ func checkUser(s *handlers.Service) func(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func listForUser(s *handlers.Service) func(w http.ResponseWriter, r *http.Request) {
+func listForUser(s *Service) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		var body struct {
