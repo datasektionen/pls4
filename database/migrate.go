@@ -13,7 +13,10 @@ var migrations embed.FS
 
 func Migrate(ctx context.Context, db *sql.DB) error {
 	if _, err := db.ExecContext(ctx, `
-		CREATE TABLE IF NOT EXISTS __migrations (name TEXT PRIMARY KEY);
+		CREATE TABLE IF NOT EXISTS __migrations (
+			name  	   TEXT PRIMARY KEY,
+			applied_at TIMESTAMP NOT NULL DEFAULT NOW()
+		);
 	`); err != nil {
 		return err
 	}
