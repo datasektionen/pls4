@@ -2,20 +2,10 @@ package api
 
 import (
 	"context"
-	"database/sql"
-
 	"github.com/google/uuid"
 )
 
-type Service struct {
-	db *sql.DB
-}
-
-func NewService(db *sql.DB) *Service {
-	return &Service{db}
-}
-
-func (s *Service) CheckUser(ctx context.Context, kthID, system, permission string) (bool, error) {
+func CheckUser(ctx context.Context, kthID, system, permission string) (bool, error) {
 	row := s.db.QueryRowContext(ctx, `
 		with recursive all_groups (group_id) as (
 			select group_id from groups_users
@@ -43,7 +33,7 @@ func (s *Service) CheckUser(ctx context.Context, kthID, system, permission strin
 	return found, nil
 }
 
-func (s *Service) ListForUser(ctx context.Context, kthID, system string) ([]string, error) {
+func ListForUser(ctx context.Context, kthID, system string) ([]string, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		with recursive all_groups (group_id) as (
 			select group_id from groups_users
@@ -74,7 +64,7 @@ func (s *Service) ListForUser(ctx context.Context, kthID, system string) ([]stri
 	return perms, nil
 }
 
-func (s *Service) CheckToken(ctx context.Context, secret uuid.UUID, system, permission string) (bool, error) {
+func CheckToken(ctx context.Context, secret uuid.UUID, system, permission string) (bool, error) {
 	row := s.db.QueryRowContext(ctx, `
 		select exists(
 			select 1 from api_tokens t

@@ -11,8 +11,8 @@ import (
 //go:embed migrations/*.sql
 var migrations embed.FS
 
-func Migrate(ctx context.Context, db *sql.DB) error {
-	if _, err := db.ExecContext(ctx, `
+func Migrate(ctx context.Context) error {
+	if _, err := DB.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS __migrations (
 			name  	   TEXT PRIMARY KEY,
 			applied_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -33,7 +33,7 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 			return err
 		}
 
-		tx, err := db.BeginTx(ctx, nil)
+		tx, err := DB.BeginTx(ctx, nil)
 		if err != nil {
 			return err
 		}

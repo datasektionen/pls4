@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pls - fourth* time's the charm</title>
+    <script>
+        window.methone_conf = {
+            system_name: "pls",
+            color_scheme: "cerise",
+            {{ if .user_name }}
+                login_text: {{ .user_name }},
+                login_href: "/logout",
+            {{ else }}
+                login_text: "Login",
+                login_href: {{ .login_url }}
+                    + "/login?callback="
+                    + encodeURIComponent(window.location.origin + "/login?code="),
+            {{ end }}
+        }
+    </script>
+    <script defer src="https://methone.datasektionen.se/bar.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="h-[50px]" id="methone-container-replace"></div>
+    <p>Hello :)</p>
+</body>
+</html>
