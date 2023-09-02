@@ -6,19 +6,36 @@ import (
 	"flag"
 	"log/slog"
 	"net/http"
+	"os"
 
 	_ "github.com/lib/pq"
 
 	"github.com/datasektionen/pls4/database"
+	"github.com/datasektionen/pls4/handlers"
+	"github.com/datasektionen/pls4/routes"
 )
+
+func envOr(key string, fallback string) string {
+	value, ok := os.LookupEnv(key)
+	if !ok {
+		return fallback
+	}
+	return value
+}
 
 func main() {
 	var (
 		address     string
 		databaseURL string
 	)
-	flag.StringVar(&address, "address", "0.0.0.0:3000", "The address to listen to requests on")
-	flag.StringVar(&databaseURL, "database-url", "postgresql://pls4:pls4@localhost:5432/pls4?sslmode=disable", "URL to the postgresql database to use")
+	flag.StringVar(&address, "address",
+		envOr("ADDRESS", "0.0.0.0:3000"),
+		"The address to listen to requests on",
+	)
+	flag.StringVar(&databaseURL, "database-url",
+		os.Getenv("DATABASE_URL"),
+		"URL to the postgresql database to use",
+	)
 	flag.Parse()
 
 	ctx := context.Background()
@@ -32,9 +49,9 @@ func main() {
 		panic(err)
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("You no have access >:^("))
-	})
+	s := handlers.NewService(db)
+
+	routes.Mount(s)
 
 	slog.Info("Started", "address", address)
 	slog.Error("Server crashed", "error", http.ListenAndServe(address, nil))

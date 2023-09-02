@@ -1,5 +1,5 @@
 create table users (
-    kthid text primary key
+    kth_id text primary key
 );
 
 create table groups (
@@ -11,7 +11,7 @@ create table groups (
 create table groups_users (
     id       uuid primary key default gen_random_uuid(),
     group_id text not null,
-    kthid    text not null,
+    kth_id   text not null,
 
     comment     text      not null,
     modified_by text      not null,
@@ -20,11 +20,11 @@ create table groups_users (
     end_date    timestamp not null,
 
     foreign key (group_id)    references groups (id),
-    foreign key (kthid)       references users (kthid),
-    foreign key (modified_by) references users (kthid)
+    foreign key (kth_id)      references users (kth_id),
+    foreign key (modified_by) references users (kth_id)
 );
 
-create table group_group (
+create table groups_groups (
     supergroup_id text not null,
     subgroup_id   text not null,
 
@@ -44,20 +44,4 @@ create table groups_permissions (
     permission_id uuid not null,
 
     foreign key (permission_id) references permissions (id)
-);
-
-create table users_permissions (
-    id            uuid primary key default gen_random_uuid(),
-    permission_id uuid not null,
-    kthid         text not null,
-
-    comment     text      not null,
-    modified_by text      not null,
-    modified_at timestamp not null default now(),
-    start_date  timestamp not null default now(),
-    end_date    timestamp not null,
-
-    foreign key (permission_id) references permissions (id),
-    foreign key (kthid)         references users (kthid),
-    foreign key (modified_by)   references users (kthid)
 );
