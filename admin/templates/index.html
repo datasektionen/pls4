@@ -1,30 +1,19 @@
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>pls - fourth* time's the charm</title>
-    <script>
-        window.methone_conf = {
-            system_name: "pls",
-            color_scheme: "cerise",
-            {{ if .UserName }}
-                login_text: {{ .UserName }},
-                login_href: "/logout",
-            {{ else }}
-                login_text: "Login",
-                login_href: {{ .LoginURL }}
-                    + "/login?callback="
-                    + encodeURIComponent(window.location.origin + "/login?code="),
+<h2 class="text-2xl font-bold">Roles</h2>
+<section class="grid grid-cols-3 gap-2 items-center m-4">
+    <p class="font-bold">Name</p>
+    <p class="font-bold">Members</p>
+    <p class="font-bold">Description</p>
+    {{ range .Roles }}
+        <hr class="col-span-3">
+        <a href="/role/{{ .ID }}">{{ .DisplayName }}</a>
+        <span>
+            {{ if gt .SubroleCount 0 }}
+                <p>{{ .SubroleCount }} sub-role{{ if ne .SubroleCount 1 }}s{{ end }}</p>
             {{ end }}
-        }
-    </script>
-    <script defer src="https://methone.datasektionen.se/bar.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body>
-    <div class="h-[50px]" id="methone-container-replace"></div>
-    <p>Hello :)</p>
-</body>
-</html>
+            {{ if gt .MemberCount 0 }}
+                <p>{{ .MemberCount }} member{{ if ne .SubroleCount 1 }}s{{ end }}</p>
+            {{ end }}
+        </span>
+        <span>{{ .Description }}</span>
+    {{ end }}
+</section>

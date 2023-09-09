@@ -6,9 +6,11 @@ import (
 )
 
 func Mount(admin Admin) {
-	http.HandleFunc("/", route(admin, index))
-	http.HandleFunc("/login", route(admin, login))
-	http.HandleFunc("/logout", route(admin, logout))
+	http.Handle("/", route(admin, index))
+	http.Handle("/role/", http.StripPrefix("/role", route(admin, role)))
+
+	http.Handle("/login", route(admin, login))
+	http.Handle("/logout", route(admin, logout))
 }
 
 func route(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
@@ -18,11 +20,36 @@ func route(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.Req
 }
 
 func index(admin Admin, w http.ResponseWriter, r *http.Request) {
-	if err := admin.RenderIndex(w, IndexParameters{
-		UserName: admin.LoggedInName(r),
-	}); err != nil {
+	roles, err := admin.ListRoles(r.Context())
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		slog.Error("Could not render template", "error", err, "template", "index.html")
+		slog.Error("Could not get roles", "error", err)
+	}
+	t := admin.Index(roles)
+
+	if r.Header.Get("HX-Boosted") == "true" {
+		err = admin.Render(w, t)
+	} else {
+		err = admin.RenderWithLayout(w, t, admin.LoggedInKTHID(r))
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		slog.Error("Could not render template", "error", err)
+	}
+}
+
+func role(admin Admin, w http.ResponseWriter, r *http.Request) {
+	t := admin.Role()
+
+	var err error
+	if r.Header.Get("HX-Boosted") == "true" {
+		err = admin.Render(w, t)
+	} else {
+		err = admin.RenderWithLayout(w, t, admin.LoggedInKTHID(r))
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		slog.Error("Could not render template", "error", err)
 	}
 }
 

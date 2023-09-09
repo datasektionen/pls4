@@ -1,22 +1,30 @@
 package admin
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"html/template"
 	"io"
 	"net/http"
+
+	"github.com/datasektionen/pls4/models"
 )
 
 //go:embed templates/*.html
 var templates embed.FS
 
 type Admin interface {
-	LoggedInName(r *http.Request) string
+	LoggedInKTHID(r *http.Request) string
 	Login(code string) (string, error)
-
-	RenderIndex(wr io.Writer, p IndexParameters) error
 	DeleteSession(sessionID string)
+
+	RenderWithLayout(wr io.Writer, t Template, userID string) error
+	Render(wr io.Writer, t Template) error
+	Index(roles []models.Role) Template
+	Role() Template
+
+	ListRoles(ctx context.Context) ([]models.Role, error)
 }
 
 type service struct {
