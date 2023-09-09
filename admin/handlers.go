@@ -82,31 +82,31 @@ func (s *service) GetSubroles(ctx context.Context, id string) ([]models.Role, er
 }
 
 func (s *service) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool, includeIndirect bool) ([]models.Member, error) {
-	query := `
-		select
-			kth_id, comment, modified_by,
-			modified_at, start_date, end_date
-		from roles_users
-		where role_id = $1
-		and ($2 or now() between start_date and end_date)
-	`
+	query := `select
+		kth_id, comment, modified_by,
+		modified_at, start_date, end_date,
+		false
+	from roles_users
+	where role_id = $1
+	and ($2 or now() between start_date and end_date)`
 	if includeIndirect {
-		query = `
-			with recursive all_subroles (role_id, indirect) as (
-				select $1, false as role_id
+		query = `with recursive all_subroles (role_id) as (
+				select subrole_id
+				from roles_roles
+				where superrole_id = $1
 				union all
-				select subrole_id, true from all_subroles
+				select subrole_id from all_subroles
 				inner join roles_roles
 				on superrole_id = role_id
-			)
-			select
-				kth_id, comment, modified_by,
-				modified_at, start_date, end_date,
-				indirect
-			from all_subroles
-			inner join roles_users using (role_id)
-			where ($2 or now() between start_date and end_date)
-		`
+		) ` + query + ` union all
+		select
+			kth_id, '' as comment, '' as modified_by,
+			max(modified_at), min(start_date), max(end_date),
+			true
+		from all_subroles
+		inner join roles_users using (role_id)
+		where ($2 or now() between start_date and end_date)
+		group by kth_id`
 	}
 
 	rows, err := s.db.QueryContext(ctx, query, id, !onlyCurrent)

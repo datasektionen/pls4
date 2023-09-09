@@ -9,13 +9,16 @@
     <p class="font-bold">Date range</p>
     <p class="font-bold">Comment</p>
     {{ range .Members }}
-        {{ $class := "" }}
-        {{ if not .Indirect }}
-        {{ $class = "font-bold" }}
+        {{ if .Indirect }}
+            <hr class="col-span-3">
+            <span>{{ .KTHID }}</span>
+            <span></span>
+            <span></span>
+        {{ else }}
+            <hr class="col-span-3">
+            <span class="font-bold">{{ .KTHID }}</span>
+            <span>{{ date .StartDate }} - {{ date .EndDate }}</span>
+            <span>{{ .Comment }}</span>
         {{ end }}
-        <hr class="col-span-3">
-        <span class="{{ $class }}">{{ .KTHID }}</span>
-        <span>{{ date .StartDate }} - {{ date .EndDate }}</span>
-        <span>{{ .Comment }}</span>
     {{ end }}
 </section>
