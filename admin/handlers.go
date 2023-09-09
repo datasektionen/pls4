@@ -127,3 +127,22 @@ func (s *service) GetRoleMembers(ctx context.Context, id string, onlyCurrent boo
 	}
 	return members, nil
 }
+
+func (s *service) UpdateRole(ctx context.Context, id string, displayName string) error {
+	res, err := s.db.ExecContext(ctx, `
+		update roles
+		set display_name = $2
+		where id = $1
+	`, id, displayName)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		// TODO: invalid id
+	}
+	return nil
+}

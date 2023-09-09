@@ -6,8 +6,9 @@ import (
 )
 
 func Mount(admin Admin) {
-	http.Handle("/", t(admin, index))
-	http.Handle("/role/", http.StripPrefix("/role/", t(admin, role)))
+	http.Handle("/", page(admin, index))
+	http.Handle("/role/", http.StripPrefix("/role/", page(admin, role)))
+	http.Handle("/role/name/", http.StripPrefix("/role/name/", partial(admin, roleName)))
 
 	http.Handle("/login", route(admin, login))
 	http.Handle("/logout", route(admin, logout))
@@ -19,7 +20,7 @@ func route(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.Req
 	}
 }
 
-func t(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.Request) Template) http.HandlerFunc {
+func page(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.Request) Template) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t := handler(admin, w, r)
 		var err error
@@ -32,6 +33,16 @@ func t(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.Request
 			err = admin.RenderWithLayout(w, t, admin.LoggedInKTHID(r))
 		}
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			slog.Error("Could not render template", "error", err)
+		}
+	}
+}
+
+func partial(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.Request) Template) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		t := handler(admin, w, r)
+		if err := admin.Render(w, t); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			slog.Error("Could not render template", "error", err)
 		}
@@ -70,6 +81,27 @@ func role(admin Admin, w http.ResponseWriter, r *http.Request) Template {
 		return admin.Error(http.StatusInternalServerError)
 	}
 	return admin.Role(*role, subroles, members)
+}
+
+func roleName(admin Admin, w http.ResponseWriter, r *http.Request) Template {
+	id := r.URL.Path
+
+	if r.Method == http.MethodPost {
+		// TODO: authorize user
+		displayName := r.FormValue("display-name")
+		admin.UpdateRole(r.Context(), id, displayName)
+		return admin.RoleName(id, displayName)
+	} else {
+		role, err := admin.GetRole(r.Context(), id)
+		if err != nil {
+			slog.Error("Could not get role", "error", err, "role_id", id)
+			return admin.Error(http.StatusInternalServerError)
+		}
+		if role == nil {
+			return admin.Error(http.StatusNotFound, "No role with id "+id)
+		}
+		return admin.RoleEditName(role.ID, role.DisplayName)
+	}
 }
 
 func login(admin Admin, w http.ResponseWriter, r *http.Request) {

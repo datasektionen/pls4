@@ -38,16 +38,26 @@ func (s *service) Roles(roles []models.Role) Template {
 
 func (s *service) Role(role models.Role, subroles []models.Role, members []models.Member) Template {
 	return Template{"role.html", http.StatusOK, map[string]any{
+		"ID": role.ID,
 		"DisplayName": role.DisplayName,
+		"Description": role.Description,
 		"Subroles":    subroles,
 		"Members":     members,
 	}}
 }
 
-func (s *service) Error(code int, messages... string) Template {
+func (s *service) RoleName(id, displayName string) Template {
+	return Template{"role-name", http.StatusOK, map[string]any{"ID": id, "DisplayName": displayName}}
+}
+
+func (s *service) RoleEditName(id, displayName string) Template {
+	return Template{"role-edit-name", http.StatusOK, map[string]any{"ID": id, "DisplayName": displayName}}
+}
+
+func (s *service) Error(code int, messages ...string) Template {
 	return Template{"error.html", code, map[string]any{
 		"StatusCode": code,
 		"StatusText": http.StatusText(code),
-		"Messages": messages,
+		"Messages":   messages,
 	}}
 }
