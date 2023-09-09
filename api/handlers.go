@@ -7,20 +7,20 @@ import (
 
 func (s *service) CheckUser(ctx context.Context, kthID, system, permission string) (bool, error) {
 	row := s.db.QueryRowContext(ctx, `
-		with recursive all_groups (group_id) as (
-			select group_id from groups_users
+		with recursive all_roles (role_id) as (
+			select role_id from roles_users
 			where kth_id = $1 and now() between start_date and end_date
 			union all
-			select supergroup_id from all_groups
-			inner join groups_groups
-			on subgroup_id = group_id
+			select superrole_id from all_roles
+			inner join roles_roles
+			on subrole_id = role_id
 		),
 		found as (
 			select from permissions p
-			inner join groups_permissions gp
+			inner join roles_permissions gp
 			on gp.permission_id = p.id
-			inner join all_groups ag
-			on ag.group_id = gp.group_id
+			inner join all_roles ag
+			on ag.role_id = gp.role_id
 			where system = $2
 			and name = $3
 		)
@@ -35,19 +35,19 @@ func (s *service) CheckUser(ctx context.Context, kthID, system, permission strin
 
 func (s *service) ListForUser(ctx context.Context, kthID, system string) ([]string, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		with recursive all_groups (group_id) as (
-			select group_id from groups_users
+		with recursive all_roles (role_id) as (
+			select role_id from roles_users
 			where kth_id = $1 and now() between start_date and end_date
 			union all
-			select supergroup_id from all_groups
-			inner join groups_groups
-			on subgroup_id = group_id
+			select superrole_id from all_roles
+			inner join roles_roles
+			on subrole_id = role_id
 		)
 		select name from permissions p
-		inner join groups_permissions gp
+		inner join roles_permissions gp
 		on gp.permission_id = p.id
-		inner join all_groups ag
-		on ag.group_id = gp.group_id
+		inner join all_roles ag
+		on ag.role_id = gp.role_id
 		where system = $2
 	`, kthID, system)
 	if err != nil {

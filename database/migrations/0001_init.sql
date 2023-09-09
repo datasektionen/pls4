@@ -2,15 +2,15 @@ create table users (
     kth_id text primary key
 );
 
-create table groups (
+create table roles (
     id           text primary key,
     display_name text not null,
     description  text not null
 );
 
-create table groups_users (
+create table roles_users (
     id       uuid primary key default gen_random_uuid(),
-    group_id text not null,
+    role_id  text not null,
     kth_id   text not null,
 
     comment     text      not null,
@@ -19,18 +19,18 @@ create table groups_users (
     start_date  timestamp not null default now(),
     end_date    timestamp not null,
 
-    foreign key (group_id)    references groups (id),
+    foreign key (role_id)     references roles (id),
     foreign key (kth_id)      references users (kth_id),
     foreign key (modified_by) references users (kth_id)
 );
 
-create table groups_groups (
-    supergroup_id text not null,
-    subgroup_id   text not null,
+create table roles_roles (
+    superrole_id text not null,
+    subrole_id   text not null,
 
-    foreign key (supergroup_id) references groups (id),
-    foreign key (subgroup_id)   references groups (id),
-    primary key (supergroup_id, subgroup_id)
+    foreign key (superrole_id) references roles (id),
+    foreign key (subrole_id)   references roles (id),
+    primary key (superrole_id, subrole_id)
 );
 
 create table permissions (
@@ -39,9 +39,28 @@ create table permissions (
     name   text not null
 );
 
-create table groups_permissions (
-    group_id      text not null,
+create table roles_permissions (
+    role_id       text not null,
     permission_id uuid not null,
 
     foreign key (permission_id) references permissions (id)
+);
+
+create table api_tokens (
+    id          uuid primary key default gen_random_uuid(),
+    secret      uuid not null default gen_random_uuid(),
+    description text not null,
+
+    created_at   timestamp not null default now(),
+    expires_at   timestamp not null,
+    last_used_at timestamp
+);
+
+create table api_tokens_permissions (
+    api_token_id  uuid not null,
+    permission_id uuid not null,
+
+    foreign key (api_token_id)  references api_tokens (id),
+    foreign key (permission_id) references permissions (id),
+    primary key (api_token_id, permission_id)
 );
