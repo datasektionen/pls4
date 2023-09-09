@@ -30,10 +30,14 @@ func (s *service) Render(wr io.Writer, t Template) error {
 	return s.t.ExecuteTemplate(wr, t.name, t.data)
 }
 
-func (s *service) Index(roles []models.Role) Template {
-	return Template{"index.html", struct{ Roles []models.Role }{Roles: roles}}
+func (s *service) Roles(roles []models.Role) Template {
+	return Template{"roles.html", roles}
 }
 
-func (s *service) Role() Template {
-	return Template{"role.html", nil}
+func (s *service) Role(role models.Role, subroles []models.Role, members []models.Member) Template {
+	return Template{"role.html", map[string]any{
+		"DisplayName": role.DisplayName,
+		"Subroles":    subroles,
+		"Members":     members,
+	}}
 }

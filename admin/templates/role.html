@@ -1,1 +1,17 @@
-<h2 class="text-2xl font-bold">Role</h2>
+<h1 class="text-3xl font-bold">{{ .DisplayName }}</h1>
+
+<h2 class="text-xl">Sub-roles</h2>
+{{ template "roles" .Subroles }}
+
+<h2 class="text-xl">Members</h2>
+<section class="grid grid-cols-3 gap-2 items-center m-3">
+    <p class="font-bold">Name</p>
+    <p class="font-bold">Date range</p>
+    <p class="font-bold">Comment</p>
+    {{ range .Members }}
+        <hr class="col-span-3">
+        <span>{{ .KTHID }}</span>
+        <span>{{ date .StartDate }} - {{ date .EndDate }}</span>
+        <span>{{ .Comment }}</span>
+    {{ end }}
+</section>

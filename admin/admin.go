@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/datasektionen/pls4/models"
 )
@@ -21,10 +22,13 @@ type Admin interface {
 
 	RenderWithLayout(wr io.Writer, t Template, userID string) error
 	Render(wr io.Writer, t Template) error
-	Index(roles []models.Role) Template
-	Role() Template
+	Roles(roles []models.Role) Template
+	Role(role models.Role, subroles []models.Role, members []models.Member) Template
 
 	ListRoles(ctx context.Context) ([]models.Role, error)
+	GetRole(ctx context.Context, id string) (models.Role, error)
+	GetSubroles(ctx context.Context, id string) ([]models.Role, error)
+	GetRoleMembers(ctx context.Context, id string, onlyCurrent bool) ([]models.Member, error)
 }
 
 type service struct {
@@ -44,7 +48,11 @@ func New(db *sql.DB, loginURL, loginAPIKey, hodisURL string) (Admin, error) {
 	s.hodisURL = hodisURL
 
 	var err error
-	s.t, err = template.ParseFS(templates, "templates/*.html")
+	s.t, err = template.New("").Funcs(map[string]any{
+		"date": func(date time.Time) string {
+			return date.Format(time.DateOnly)
+		},
+	}).ParseFS(templates, "templates/*.html")
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,7 @@ import (
 
 func Mount(admin Admin) {
 	http.Handle("/", route(admin, index))
-	http.Handle("/role/", http.StripPrefix("/role", route(admin, role)))
+	http.Handle("/role/", http.StripPrefix("/role/", route(admin, role)))
 
 	http.Handle("/login", route(admin, login))
 	http.Handle("/logout", route(admin, logout))
@@ -25,7 +25,7 @@ func index(admin Admin, w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		slog.Error("Could not get roles", "error", err)
 	}
-	t := admin.Index(roles)
+	t := admin.Roles(roles)
 
 	if r.Header.Get("HX-Boosted") == "true" {
 		err = admin.Render(w, t)
@@ -39,9 +39,26 @@ func index(admin Admin, w http.ResponseWriter, r *http.Request) {
 }
 
 func role(admin Admin, w http.ResponseWriter, r *http.Request) {
-	t := admin.Role()
+	ctx := r.Context()
 
-	var err error
+	id := r.URL.Path
+	role, err := admin.GetRole(ctx, id)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		slog.Error("Could not get role", "error", err, "role_id", id)
+	}
+	subroles, err := admin.GetSubroles(ctx, id)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		slog.Error("Could not get subroles", "error", err, "role_id", id)
+	}
+	members, err := admin.GetRoleMembers(ctx, id, true)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		slog.Error("Could not get role members", "error", err, "role_id", id)
+	}
+	t := admin.Role(role, subroles, members)
+
 	if r.Header.Get("HX-Boosted") == "true" {
 		err = admin.Render(w, t)
 	} else {
