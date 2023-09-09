@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func CheckUser(ctx context.Context, kthID, system, permission string) (bool, error) {
+func (s *service) CheckUser(ctx context.Context, kthID, system, permission string) (bool, error) {
 	row := s.db.QueryRowContext(ctx, `
 		with recursive all_groups (group_id) as (
 			select group_id from groups_users
@@ -33,7 +33,7 @@ func CheckUser(ctx context.Context, kthID, system, permission string) (bool, err
 	return found, nil
 }
 
-func ListForUser(ctx context.Context, kthID, system string) ([]string, error) {
+func (s *service) ListForUser(ctx context.Context, kthID, system string) ([]string, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		with recursive all_groups (group_id) as (
 			select group_id from groups_users
@@ -64,7 +64,7 @@ func ListForUser(ctx context.Context, kthID, system string) ([]string, error) {
 	return perms, nil
 }
 
-func CheckToken(ctx context.Context, secret uuid.UUID, system, permission string) (bool, error) {
+func (s *service) CheckToken(ctx context.Context, secret uuid.UUID, system, permission string) (bool, error) {
 	row := s.db.QueryRowContext(ctx, `
 		select exists(
 			select 1 from api_tokens t

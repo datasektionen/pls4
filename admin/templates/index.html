@@ -9,12 +9,12 @@
         window.methone_conf = {
             system_name: "pls",
             color_scheme: "cerise",
-            {{ if .user_name }}
-                login_text: {{ .user_name }},
+            {{ if .UserName }}
+                login_text: {{ .UserName }},
                 login_href: "/logout",
             {{ else }}
                 login_text: "Login",
-                login_href: {{ .login_url }}
+                login_href: {{ .LoginURL }}
                     + "/login?callback="
                     + encodeURIComponent(window.location.origin + "/login?code="),
             {{ end }}

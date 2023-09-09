@@ -14,20 +14,18 @@ type session struct {
 	validUntil time.Time
 }
 
-func init() {
-	go func() {
-		for {
-			time.Sleep(time.Hour)
-			for k, session := range s.sessions {
-				if session.validUntil.Before(time.Now()) {
-					delete(s.sessions, k)
-				}
+func (s *service) deleteOldSessionsForever() {
+	for {
+		time.Sleep(time.Hour)
+		for k, session := range s.sessions {
+			if session.validUntil.Before(time.Now()) {
+				delete(s.sessions, k)
 			}
 		}
-	}()
+	}
 }
 
-func Login(code string) (string, error) {
+func (s *service) Login(code string) (string, error) {
 	slog.Info("logging in", "login url", s.loginURL)
 	res, err := http.Get(
 		s.loginURL + "/verify/" + code + "?api_key=" + s.loginAPIKey,
@@ -51,7 +49,7 @@ func Login(code string) (string, error) {
 
 // Returns the kth id of the logged in user, or the empty string if no user is
 // logged in.
-func LoggedInKTHID(r *http.Request) string {
+func (s *service) LoggedInKTHID(r *http.Request) string {
 	cookie, err := r.Cookie("session")
 	if err != nil {
 		return ""
@@ -71,8 +69,8 @@ func LoggedInKTHID(r *http.Request) string {
 // Fetches the name of the logged in user from hodis. Falls back to the kth id
 // if the name cannot be fetched. Returns the empty string when no user is
 // logged in.
-func LoggedInName(r *http.Request) string {
-	kthID := LoggedInKTHID(r)
+func (s *service) LoggedInName(r *http.Request) string {
+	kthID := s.LoggedInKTHID(r)
 	if kthID == "" {
 		return ""
 	}

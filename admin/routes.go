@@ -5,24 +5,29 @@ import (
 	"net/http"
 )
 
-func init() {
-	http.HandleFunc("/", index)
-	http.HandleFunc("/login", login)
+func Mount(admin Admin) {
+	http.HandleFunc("/", route(admin, index))
+	http.HandleFunc("/login", route(admin, login))
 }
 
-func index(w http.ResponseWriter, r *http.Request) {
-	if err := s.t.ExecuteTemplate(w, "index.html", map[string]any{
-		"login_url": s.loginURL,
-		"user_name": LoggedInName(r),
+func route[T any](t T, handler func(t T, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		handler(t, w, r)
+	}
+}
+
+func index(admin Admin, w http.ResponseWriter, r *http.Request) {
+	if err := admin.RenderIndex(w, IndexParameters{
+		UserName: admin.LoggedInName(r),
 	}); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		slog.Error("Could not render template", "error", err, "template", "index.html")
 	}
 }
 
-func login(w http.ResponseWriter, r *http.Request) {
+func login(admin Admin, w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
-	sessionToken, err := Login(code)
+	sessionToken, err := admin.Login(code)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		slog.Error("Could not verify login code", "error", err)

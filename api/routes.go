@@ -8,13 +8,19 @@ import (
 	"github.com/google/uuid"
 )
 
-func init() {
-	http.HandleFunc("/api/check-user", checkUser)
-	http.HandleFunc("/api/list-for-user", listForUser)
-	http.HandleFunc("/api/check-token", checkToken)
+func Mount(api API) {
+	http.Handle("/api/check-user", route(api, checkUser))
+	http.Handle("/api/list-for-user", route(api, listForUser))
+	http.Handle("/api/check-token", route(api, checkToken))
 }
 
-func checkUser(w http.ResponseWriter, r *http.Request) {
+func route(api API, handler func(api API, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+	return func (w http.ResponseWriter, r *http.Request) {
+		handler(api, w, r)
+	}
+}
+
+func checkUser(api API, w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var body struct {
 		KTHID      string `json:"kth_id"`
@@ -25,7 +31,7 @@ func checkUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	ok, err := CheckUser(ctx, body.KTHID, body.System, body.Permission)
+	ok, err := api.CheckUser(ctx, body.KTHID, body.System, body.Permission)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		slog.ErrorContext(ctx, "Error checking user permission", "error", err)
@@ -38,7 +44,7 @@ func checkUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func listForUser(w http.ResponseWriter, r *http.Request) {
+func listForUser(api API, w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var body struct {
 		KTHID  string `json:"kth_id"`
@@ -48,7 +54,7 @@ func listForUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	perms, err := ListForUser(ctx, body.KTHID, body.System)
+	perms, err := api.ListForUser(ctx, body.KTHID, body.System)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		slog.ErrorContext(ctx, "Error listing permissions for user", "error", err)
@@ -61,7 +67,7 @@ func listForUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func checkToken(w http.ResponseWriter, r *http.Request) {
+func checkToken(api API, w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var body struct {
 		Secret     uuid.UUID `json:"secret"`
@@ -72,7 +78,7 @@ func checkToken(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	perms, err := CheckToken(ctx, body.Secret, body.System, body.Permission)
+	perms, err := api.CheckToken(ctx, body.Secret, body.System, body.Permission)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		slog.ErrorContext(ctx, "Error checking token permission", "error", err)
