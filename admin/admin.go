@@ -16,6 +16,7 @@ type Admin interface {
 	Login(code string) (string, error)
 
 	RenderIndex(wr io.Writer, p IndexParameters) error
+	DeleteSession(sessionID string)
 }
 
 type service struct {

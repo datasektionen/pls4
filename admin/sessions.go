@@ -2,7 +2,6 @@ package admin
 
 import (
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -26,7 +25,6 @@ func (s *service) deleteOldSessionsForever() {
 }
 
 func (s *service) Login(code string) (string, error) {
-	slog.Info("logging in", "login url", s.loginURL)
 	res, err := http.Get(
 		s.loginURL + "/verify/" + code + "?api_key=" + s.loginAPIKey,
 	)
@@ -45,6 +43,10 @@ func (s *service) Login(code string) (string, error) {
 		validUntil: time.Now().Add(time.Hour),
 	}
 	return id, nil
+}
+
+func (s *service) DeleteSession(sessionID string) {
+	delete(s.sessions, sessionID)
 }
 
 // Returns the kth id of the logged in user, or the empty string if no user is

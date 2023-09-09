@@ -8,11 +8,12 @@ import (
 func Mount(admin Admin) {
 	http.HandleFunc("/", route(admin, index))
 	http.HandleFunc("/login", route(admin, login))
+	http.HandleFunc("/logout", route(admin, logout))
 }
 
-func route[T any](t T, handler func(t T, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+func route(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		handler(t, w, r)
+		handler(admin, w, r)
 	}
 }
 
@@ -40,6 +41,18 @@ func login(admin Admin, w http.ResponseWriter, r *http.Request) {
 		Secure:   false,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
+	})
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func logout(admin Admin, w http.ResponseWriter, r *http.Request) {
+	cookie, _ := r.Cookie("session")
+	if cookie != nil {
+		admin.DeleteSession(cookie.Value)
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:   "session",
+		MaxAge: -1,
 	})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
