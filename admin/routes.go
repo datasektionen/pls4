@@ -64,7 +64,7 @@ func role(admin Admin, w http.ResponseWriter, r *http.Request) Template {
 		slog.Error("Could not get subroles", "error", err, "role_id", id)
 		return admin.Error(http.StatusInternalServerError)
 	}
-	members, err := admin.GetRoleMembers(ctx, id, true)
+	members, err := admin.GetRoleMembers(ctx, id, true, true)
 	if err != nil {
 		slog.Error("Could not get role members", "error", err, "role_id", id)
 		return admin.Error(http.StatusInternalServerError)

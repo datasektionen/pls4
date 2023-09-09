@@ -29,7 +29,7 @@ type Admin interface {
 	ListRoles(ctx context.Context) ([]models.Role, error)
 	GetRole(ctx context.Context, id string) (*models.Role, error)
 	GetSubroles(ctx context.Context, id string) ([]models.Role, error)
-	GetRoleMembers(ctx context.Context, id string, onlyCurrent bool) ([]models.Member, error)
+	GetRoleMembers(ctx context.Context, id string, onlyCurrent bool, includeIndirect bool) ([]models.Member, error)
 }
 
 type service struct {

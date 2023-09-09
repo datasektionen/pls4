@@ -17,4 +17,5 @@ type Member struct {
 	ModifiedAt time.Time
 	StartDate  time.Time
 	EndDate    time.Time
+	Indirect   bool
 }

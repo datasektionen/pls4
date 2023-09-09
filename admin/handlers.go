@@ -2,7 +2,6 @@ package admin
 
 import (
 	"context"
-	"time"
 
 	"github.com/datasektionen/pls4/models"
 )
@@ -82,15 +81,35 @@ func (s *service) GetSubroles(ctx context.Context, id string) ([]models.Role, er
 	return roles, nil
 }
 
-func (s *service) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool) ([]models.Member, error) {
-	rows, err := s.db.QueryContext(ctx, `
+func (s *service) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool, includeIndirect bool) ([]models.Member, error) {
+	query := `
 		select
 			kth_id, comment, modified_by,
 			modified_at, start_date, end_date
 		from roles_users
 		where role_id = $1
-		and ($2 or $3 between start_date and end_date)
-	`, id, !onlyCurrent, time.Now())
+		and ($2 or now() between start_date and end_date)
+	`
+	if includeIndirect {
+		query = `
+			with recursive all_subroles (role_id, indirect) as (
+				select $1, false as role_id
+				union all
+				select subrole_id, true from all_subroles
+				inner join roles_roles
+				on superrole_id = role_id
+			)
+			select
+				kth_id, comment, modified_by,
+				modified_at, start_date, end_date,
+				indirect
+			from all_subroles
+			inner join roles_users using (role_id)
+			where ($2 or now() between start_date and end_date)
+		`
+	}
+
+	rows, err := s.db.QueryContext(ctx, query, id, !onlyCurrent)
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +119,7 @@ func (s *service) GetRoleMembers(ctx context.Context, id string, onlyCurrent boo
 		if err := rows.Scan(
 			&m.KTHID, &m.Comment, &m.ModifiedBy,
 			&m.ModifiedAt, &m.StartDate, &m.EndDate,
+			&m.Indirect,
 		); err != nil {
 			return nil, err
 		}
