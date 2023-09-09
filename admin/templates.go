@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"html/template"
 	"io"
+	"net/http"
 
 	"github.com/datasektionen/pls4/models"
 )
 
 type Template struct {
 	name string
+	code int
 	data any
 }
 
@@ -31,13 +33,21 @@ func (s *service) Render(wr io.Writer, t Template) error {
 }
 
 func (s *service) Roles(roles []models.Role) Template {
-	return Template{"roles.html", roles}
+	return Template{"roles.html", http.StatusOK, roles}
 }
 
 func (s *service) Role(role models.Role, subroles []models.Role, members []models.Member) Template {
-	return Template{"role.html", map[string]any{
+	return Template{"role.html", http.StatusOK, map[string]any{
 		"DisplayName": role.DisplayName,
 		"Subroles":    subroles,
 		"Members":     members,
+	}}
+}
+
+func (s *service) Error(code int, messages... string) Template {
+	return Template{"error.html", code, map[string]any{
+		"StatusCode": code,
+		"StatusText": http.StatusText(code),
+		"Messages": messages,
 	}}
 }

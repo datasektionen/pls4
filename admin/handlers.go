@@ -34,7 +34,7 @@ func (s *service) ListRoles(ctx context.Context) ([]models.Role, error) {
 	return roles, nil
 }
 
-func (s *service) GetRole(ctx context.Context, id string) (models.Role, error) {
+func (s *service) GetRole(ctx context.Context, id string) (*models.Role, error) {
 	rows := s.db.QueryRowContext(ctx, `
 		select
 			r.id, r.display_name, r.description,
@@ -47,7 +47,10 @@ func (s *service) GetRole(ctx context.Context, id string) (models.Role, error) {
 	`, id)
 	var r models.Role
 	err := rows.Scan(&r.ID, &r.DisplayName, &r.Description, &r.SubroleCount, &r.MemberCount)
-	return r, err
+	if r.ID == "" {
+		return nil, nil
+	}
+	return &r, err
 }
 
 func (s *service) GetSubroles(ctx context.Context, id string) ([]models.Role, error) {

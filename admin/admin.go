@@ -24,9 +24,10 @@ type Admin interface {
 	Render(wr io.Writer, t Template) error
 	Roles(roles []models.Role) Template
 	Role(role models.Role, subroles []models.Role, members []models.Member) Template
+	Error(code int, messages ...string) Template
 
 	ListRoles(ctx context.Context) ([]models.Role, error)
-	GetRole(ctx context.Context, id string) (models.Role, error)
+	GetRole(ctx context.Context, id string) (*models.Role, error)
 	GetSubroles(ctx context.Context, id string) ([]models.Role, error)
 	GetRoleMembers(ctx context.Context, id string, onlyCurrent bool) ([]models.Member, error)
 }
