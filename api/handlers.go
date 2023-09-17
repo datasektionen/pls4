@@ -2,6 +2,9 @@ package api
 
 import (
 	"context"
+	"database/sql"
+	"log/slog"
+
 	"github.com/google/uuid"
 )
 
@@ -65,22 +68,34 @@ func (s *service) ListForUser(ctx context.Context, kthID, system string) ([]stri
 }
 
 func (s *service) CheckToken(ctx context.Context, secret uuid.UUID, system, permission string) (bool, error) {
-	row := s.db.QueryRowContext(ctx, `
-		select exists(
-			select 1 from api_tokens t
-			inner join api_tokens_permissions tp
-			on tp.api_token_id = t.id
-			inner join permissions p
-			on p.id = tp.permission_id
-			where t.secret = $1
-			and system = $2
-			and name = $3
-		)
-	`, secret, system, permission)
-	var found bool
-	if err := row.Scan(&found); err != nil {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
 		return false, err
 	}
-	return found, nil
+	row := tx.QueryRowContext(ctx, `
+		select t.id from api_tokens t
+		inner join api_tokens_permissions tp
+			on tp.api_token_id = t.id
+		inner join permissions p
+			on p.id = tp.permission_id
+		where t.secret = $1
+		and system = $2
+		and name = $3
+	`, secret, system, permission)
+	var id uuid.UUID
+	if err := row.Scan(&id); err == sql.ErrNoRows {
+		return false, tx.Commit()
+	} else if err != nil {
+		_ = tx.Rollback()
+		return false, err
+	}
+	if _, err := tx.ExecContext(ctx, `
+		update api_tokens
+		set last_used_at = now()
+		where id = $1
+	`, id); err != nil {
+		slog.ErrorContext(ctx, "Could not update last_used_at", "id", id)
+	}
+	return true, tx.Commit()
 }
 
