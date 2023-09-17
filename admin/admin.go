@@ -17,9 +17,9 @@ import (
 var templates embed.FS
 
 type Admin interface {
-	LoggedInKTHID(r *http.Request) string
+	GetSession(r *http.Request) (Session, error)
 	Login(code string) (string, error)
-	DeleteSession(sessionID string)
+	DeleteSession(sessionID string) error
 
 	RenderWithLayout(wr io.Writer, t Template, userID string) error
 	Render(wr io.Writer, t Template) error
@@ -46,7 +46,6 @@ type service struct {
 	loginURL    string
 	loginAPIKey string
 	hodisURL    string
-	sessions    map[string]session
 }
 
 func New(db *sql.DB, api api.API, loginURL, loginAPIKey, hodisURL string) (Admin, error) {
@@ -68,7 +67,6 @@ func New(db *sql.DB, api api.API, loginURL, loginAPIKey, hodisURL string) (Admin
 	}
 
 	s.db = db
-	s.sessions = make(map[string]session)
 
 	go s.deleteOldSessionsForever()
 

@@ -30,7 +30,10 @@ func page(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.Requ
 			if t.code != 0 {
 				w.WriteHeader(t.code)
 			}
-			err = admin.RenderWithLayout(w, t, admin.LoggedInKTHID(r))
+			session, _ := admin.GetSession(r)
+			if err == nil {
+				err = admin.RenderWithLayout(w, t, session.DisplayName)
+			}
 		}
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -80,8 +83,12 @@ func role(admin Admin, w http.ResponseWriter, r *http.Request) Template {
 		slog.Error("Could not get role members", "error", err, "role_id", id)
 		return admin.Error(http.StatusInternalServerError)
 	}
-	kthID := admin.LoggedInKTHID(r)
-	canUpdate, err := admin.CanUpdateRole(ctx, kthID, id)
+	session, err := admin.GetSession(r)
+	if err != nil{
+		slog.Error("Could not get current session", "error", err, "role_id", id)
+		return admin.Error(http.StatusInternalServerError)
+	}
+	canUpdate, err := admin.CanUpdateRole(ctx, session.KTHID, id)
 	if err != nil {
 		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
 		return admin.Error(http.StatusInternalServerError)
@@ -94,8 +101,12 @@ func roleName(admin Admin, w http.ResponseWriter, r *http.Request) Template {
 
 	if r.Method == http.MethodPost {
 		displayName := r.FormValue("display-name")
-		kthID := admin.LoggedInKTHID(r)
-		if err := admin.UpdateRole(r.Context(), kthID, id, displayName); err != nil {
+		session, err := admin.GetSession(r)
+		if err != nil {
+			// TODO: redirect to login?
+			return admin.Error(http.StatusUnauthorized)
+		}
+		if err := admin.UpdateRole(r.Context(), session.KTHID, id, displayName); err != nil {
 			return admin.Error(http.StatusInternalServerError)
 		}
 		return admin.RoleName(id, displayName, true)

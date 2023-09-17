@@ -64,3 +64,12 @@ create table api_tokens_permissions (
     foreign key (permission_id) references permissions (id),
     primary key (api_token_id, permission_id)
 );
+
+create table sessions (
+    id           uuid primary key default gen_random_uuid(),
+    kth_id       text      not null,
+    display_name text      not null,
+    last_used_at timestamp not null,
+
+    foreign key (kth_id) references users (kth_id)
+)

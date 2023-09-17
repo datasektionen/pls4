@@ -1,26 +1,28 @@
 package admin
 
 import (
+	"database/sql"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"time"
-
-	"github.com/google/uuid"
 )
 
-type session struct {
-	kthID      string
-	validUntil time.Time
+type Session struct {
+	KTHID       string
+	DisplayName string
 }
 
 func (s *service) deleteOldSessionsForever() {
+	// TODO: context?
 	for {
-		time.Sleep(time.Hour)
-		for k, session := range s.sessions {
-			if session.validUntil.Before(time.Now()) {
-				delete(s.sessions, k)
-			}
+		if _, err := s.db.Exec(`
+			delete from sessions
+			where last_used_at <= now() - interval '1' hour
+		`); err != nil {
+			slog.Error("Could not delete old sessions", "error", err)
 		}
+		time.Sleep(time.Hour)
 	}
 }
 
@@ -30,38 +32,54 @@ func (s *service) Login(code string) (string, error) {
 		return "", err
 	}
 	var body struct {
-		KTHID string `json:"user"`
+		KTHID     string `json:"user"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
 	}
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
 		return "", err
 	}
-	id := uuid.NewString()
-	s.sessions[id] = session{
-		kthID:      body.KTHID,
-		validUntil: time.Now().Add(time.Hour),
+	r := s.db.QueryRow(`
+		insert into sessions (kth_id, display_name, last_used_at)
+		values ($1, $2, now())
+		returning id
+	`, body.KTHID, body.FirstName+" "+body.LastName)
+	var id string
+	if err := r.Scan(&id); err != nil {
+		return "", err
 	}
 	return id, nil
 }
 
-func (s *service) DeleteSession(sessionID string) {
-	delete(s.sessions, sessionID)
+func (s *service) DeleteSession(sessionID string) error {
+	_, err := s.db.Exec(`
+		delete from sessions
+		where id = $1
+	`, sessionID)
+	return err
 }
 
-// Returns the kth id of the logged in user, or the empty string if no user is
+// Returns the kth id and display name of the logged in user, or the zero value if no user is
 // logged in.
-func (s *service) LoggedInKTHID(r *http.Request) string {
+func (s *service) GetSession(r *http.Request) (Session, error) {
 	cookie, err := r.Cookie("session")
 	if err != nil {
-		return ""
+		return Session{}, nil
 	}
 	id := cookie.Value
-	session, ok := s.sessions[id]
-	if !ok {
-		return ""
+	row := s.db.QueryRowContext(r.Context(), `
+		select kth_id, display_name
+		from sessions
+		where id = $1
+		and last_used_at > now() - interval '1' hour
+	`, id)
+	var session Session
+	if err := row.Scan(
+		&session.KTHID,
+		&session.DisplayName,
+	); err != nil && err != sql.ErrNoRows {
+		slog.ErrorContext(r.Context(), "Could not get session from database", "id", id, "error", err)
+		return Session{}, err
 	}
-	if session.validUntil.Before(time.Now()) {
-		delete(s.sessions, id)
-		return ""
-	}
-	return session.kthID
+	return session, nil
 }
