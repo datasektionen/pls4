@@ -48,7 +48,7 @@ create table roles_permissions (
 
 create table api_tokens (
     id          uuid primary key default gen_random_uuid(),
-    secret      uuid not null default gen_random_uuid(),
+    secret      uuid unique not null default gen_random_uuid(),
     description text not null,
 
     created_at   timestamp not null default now(),

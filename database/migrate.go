@@ -40,13 +40,11 @@ func Migrate(db *sql.DB, ctx context.Context) error {
 
 		if err := tx.QueryRowContext(ctx, `
 			SELECT FROM __migrations WHERE name = $1
-		`, entry.Name()).Scan(); err != nil {
-			if err != sql.ErrNoRows {
-				return err
-			}
-		} else {
+		`, entry.Name()).Scan(); err == nil {
 			// No error means we found the migration, meaning it's already applied.
 			continue
+		} else if err != sql.ErrNoRows {
+			return err
 		}
 
 		slog.InfoContext(ctx, "Applying migration", "name", entry.Name())

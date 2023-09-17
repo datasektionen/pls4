@@ -16,14 +16,14 @@ func (s *service) CheckUser(ctx context.Context, kthID, system, permission strin
 			union all
 			select superrole_id from all_roles
 			inner join roles_roles
-			on subrole_id = role_id
+				on subrole_id = role_id
 		),
 		found as (
 			select from permissions p
 			inner join roles_permissions gp
-			on gp.permission_id = p.id
+				on gp.permission_id = p.id
 			inner join all_roles ag
-			on ag.role_id = gp.role_id
+				on ag.role_id = gp.role_id
 			where system = $2
 			and name = $3
 		)
@@ -44,13 +44,13 @@ func (s *service) ListForUser(ctx context.Context, kthID, system string) ([]stri
 			union all
 			select superrole_id from all_roles
 			inner join roles_roles
-			on subrole_id = role_id
+				on subrole_id = role_id
 		)
 		select name from permissions p
 		inner join roles_permissions gp
-		on gp.permission_id = p.id
+			on gp.permission_id = p.id
 		inner join all_roles ag
-		on ag.role_id = gp.role_id
+			on ag.role_id = gp.role_id
 		where system = $2
 	`, kthID, system)
 	if err != nil {
