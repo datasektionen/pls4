@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/datasektionen/pls4/api"
 	"github.com/datasektionen/pls4/models"
 )
 
@@ -23,8 +24,8 @@ type Admin interface {
 	RenderWithLayout(wr io.Writer, t Template, userID string) error
 	Render(wr io.Writer, t Template) error
 	Roles(roles []models.Role) Template
-	Role(role models.Role, subroles []models.Role, members []models.Member) Template
-	RoleName(id, displayName string) Template
+	Role(role models.Role, subroles []models.Role, members []models.Member, canUpdate bool) Template
+	RoleName(id, displayName string, canUpdate bool) Template
 	RoleEditName(id, displayName string) Template
 	Error(code int, messages ...string) Template
 
@@ -33,11 +34,14 @@ type Admin interface {
 	GetSubroles(ctx context.Context, id string) ([]models.Role, error)
 	GetRoleMembers(ctx context.Context, id string, onlyCurrent bool, includeIndirect bool) ([]models.Member, error)
 
-	UpdateRole(ctx context.Context, id string, displayName string) error
+	UpdateRole(ctx context.Context, kthID, roleID, displayName string) error
+
+	CanUpdateRole(ctx context.Context, kthID, roleID string) (bool, error)
 }
 
 type service struct {
 	db          *sql.DB
+	api         api.API
 	t           *template.Template
 	loginURL    string
 	loginAPIKey string
@@ -45,9 +49,10 @@ type service struct {
 	sessions    map[string]session
 }
 
-func New(db *sql.DB, loginURL, loginAPIKey, hodisURL string) (Admin, error) {
+func New(db *sql.DB, api api.API, loginURL, loginAPIKey, hodisURL string) (Admin, error) {
 	s := &service{}
 
+	s.api = api
 	s.loginURL = loginURL
 	s.loginAPIKey = loginAPIKey
 	s.hodisURL = hodisURL

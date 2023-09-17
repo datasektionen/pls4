@@ -80,17 +80,25 @@ func role(admin Admin, w http.ResponseWriter, r *http.Request) Template {
 		slog.Error("Could not get role members", "error", err, "role_id", id)
 		return admin.Error(http.StatusInternalServerError)
 	}
-	return admin.Role(*role, subroles, members)
+	kthID := admin.LoggedInKTHID(r)
+	canUpdate, err := admin.CanUpdateRole(ctx, kthID, id)
+	if err != nil {
+		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
+		return admin.Error(http.StatusInternalServerError)
+	}
+	return admin.Role(*role, subroles, members, canUpdate)
 }
 
 func roleName(admin Admin, w http.ResponseWriter, r *http.Request) Template {
 	id := r.URL.Path
 
 	if r.Method == http.MethodPost {
-		// TODO: authorize user
 		displayName := r.FormValue("display-name")
-		admin.UpdateRole(r.Context(), id, displayName)
-		return admin.RoleName(id, displayName)
+		kthID := admin.LoggedInKTHID(r)
+		if err := admin.UpdateRole(r.Context(), kthID, id, displayName); err != nil {
+			return admin.Error(http.StatusInternalServerError)
+		}
+		return admin.RoleName(id, displayName, true)
 	} else {
 		role, err := admin.GetRole(r.Context(), id)
 		if err != nil {

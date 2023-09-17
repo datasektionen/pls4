@@ -36,18 +36,23 @@ func (s *service) Roles(roles []models.Role) Template {
 	return Template{"roles.html", http.StatusOK, roles}
 }
 
-func (s *service) Role(role models.Role, subroles []models.Role, members []models.Member) Template {
+func (s *service) Role(role models.Role, subroles []models.Role, members []models.Member, canUpdate bool) Template {
 	return Template{"role.html", http.StatusOK, map[string]any{
 		"ID": role.ID,
 		"DisplayName": role.DisplayName,
 		"Description": role.Description,
 		"Subroles":    subroles,
 		"Members":     members,
+		"CanUpdate":   canUpdate,
 	}}
 }
 
-func (s *service) RoleName(id, displayName string) Template {
-	return Template{"role-name", http.StatusOK, map[string]any{"ID": id, "DisplayName": displayName}}
+func (s *service) RoleName(id, displayName string, canUpdate bool) Template {
+	return Template{"role-name", http.StatusOK, map[string]any{
+		"ID": id,
+		"DisplayName": displayName,
+		"CanUpdate": canUpdate,
+	}}
 }
 
 func (s *service) RoleEditName(id, displayName string) Template {

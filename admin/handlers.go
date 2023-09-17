@@ -128,12 +128,18 @@ func (s *service) GetRoleMembers(ctx context.Context, id string, onlyCurrent boo
 	return members, nil
 }
 
-func (s *service) UpdateRole(ctx context.Context, id string, displayName string) error {
+func (s *service) UpdateRole(ctx context.Context, kthID, roleID, displayName string) error {
+	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
+		return err
+	} else if !ok {
+		// TODO: return an error
+		return nil
+	}
 	res, err := s.db.ExecContext(ctx, `
 		update roles
 		set display_name = $2
 		where id = $1
-	`, id, displayName)
+	`, roleID, displayName)
 	if err != nil {
 		return err
 	}

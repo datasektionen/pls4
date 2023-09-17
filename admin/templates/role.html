@@ -1,15 +1,23 @@
 {{ block "role-name" . }}
 <h1
     class="text-3xl font-bold"
-    hx-get="/role/name/{{ .ID }}"
-    hx-swap="outerHTML"
-    hx-target="this"
->{{ .DisplayName }}</h1>
+    {{ if .CanUpdate }}
+        hx-get="/role/name/{{ .ID }}"
+        hx-swap="outerHTML"
+        hx-target="this"
+    {{ end }}
+>
+    {{ .DisplayName }}
+    {{ if .CanUpdate }}
+        <i class="fa-regular fa-pen-to-square"></i>
+    {{ end }}
+</h1>
 {{ end }}
 {{ define "role-edit-name" }}
 <form
     class="text-3xl"
     hx-post="/role/name/{{ .ID }}"
+    hx-swap="outerHTML"
     hx-target="this"
 >
     <input name="display-name" type="text" value="{{ .DisplayName }}" />

@@ -51,7 +51,7 @@ func main() {
 	}
 
 	apiService := api.New(db)
-	adminService, err := admin.New(db, loginURL, loginAPIKey, hodisURL)
+	adminService, err := admin.New(db, apiService, loginURL, loginAPIKey, hodisURL)
 	if err != nil {
 		panic(err)
 	}
