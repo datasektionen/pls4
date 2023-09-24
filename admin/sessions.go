@@ -13,7 +13,7 @@ type Session struct {
 	DisplayName string
 }
 
-func (s *service) deleteOldSessionsForever() {
+func (s *Admin) deleteOldSessionsForever() {
 	// TODO: context?
 	for {
 		if _, err := s.db.Exec(`
@@ -26,7 +26,7 @@ func (s *service) deleteOldSessionsForever() {
 	}
 }
 
-func (s *service) Login(code string) (string, error) {
+func (s *Admin) Login(code string) (string, error) {
 	res, err := http.Get(s.loginURL + "/verify/" + code + "?api_key=" + s.loginAPIKey)
 	if err != nil {
 		return "", err
@@ -51,7 +51,7 @@ func (s *service) Login(code string) (string, error) {
 	return id, nil
 }
 
-func (s *service) DeleteSession(sessionID string) error {
+func (s *Admin) DeleteSession(sessionID string) error {
 	_, err := s.db.Exec(`
 		delete from sessions
 		where id = $1
@@ -61,7 +61,7 @@ func (s *service) DeleteSession(sessionID string) error {
 
 // Returns the kth id and display name of the logged in user, or the zero value if no user is
 // logged in.
-func (s *service) GetSession(r *http.Request) (Session, error) {
+func (s *Admin) GetSession(r *http.Request) (Session, error) {
 	cookie, err := r.Cookie("session")
 	if err != nil {
 		return Session{}, nil

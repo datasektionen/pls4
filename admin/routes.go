@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func Mount(admin Admin) {
+func Mount(admin *Admin) {
 	http.Handle("/", page(admin, index))
 	http.Handle("/role/", http.StripPrefix("/role/", page(admin, role)))
 	http.Handle("/role/name/", http.StripPrefix("/role/name/", partial(admin, roleName)))
@@ -14,13 +14,13 @@ func Mount(admin Admin) {
 	http.Handle("/logout", route(admin, logout))
 }
 
-func route(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+func route(admin *Admin, handler func(t *Admin, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		handler(admin, w, r)
 	}
 }
 
-func page(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.Request) Template) http.HandlerFunc {
+func page(admin *Admin, handler func(t *Admin, w http.ResponseWriter, r *http.Request) Template) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t := handler(admin, w, r)
 		var err error
@@ -42,7 +42,7 @@ func page(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func partial(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.Request) Template) http.HandlerFunc {
+func partial(admin *Admin, handler func(t *Admin, w http.ResponseWriter, r *http.Request) Template) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t := handler(admin, w, r)
 		if err := admin.Render(w, t); err != nil {
@@ -52,7 +52,7 @@ func partial(admin Admin, handler func(t Admin, w http.ResponseWriter, r *http.R
 	}
 }
 
-func index(admin Admin, w http.ResponseWriter, r *http.Request) Template {
+func index(admin *Admin, w http.ResponseWriter, r *http.Request) Template {
 	roles, err := admin.ListRoles(r.Context())
 	if err != nil {
 		slog.Error("Could not get roles", "error", err)
@@ -61,7 +61,7 @@ func index(admin Admin, w http.ResponseWriter, r *http.Request) Template {
 	return admin.Roles(roles)
 }
 
-func role(admin Admin, w http.ResponseWriter, r *http.Request) Template {
+func role(admin *Admin, w http.ResponseWriter, r *http.Request) Template {
 	ctx := r.Context()
 
 	id := r.URL.Path
@@ -96,7 +96,7 @@ func role(admin Admin, w http.ResponseWriter, r *http.Request) Template {
 	return admin.Role(*role, subroles, members, canUpdate)
 }
 
-func roleName(admin Admin, w http.ResponseWriter, r *http.Request) Template {
+func roleName(admin *Admin, w http.ResponseWriter, r *http.Request) Template {
 	id := r.URL.Path
 
 	if r.Method == http.MethodPost {
@@ -123,7 +123,7 @@ func roleName(admin Admin, w http.ResponseWriter, r *http.Request) Template {
 	}
 }
 
-func login(admin Admin, w http.ResponseWriter, r *http.Request) {
+func login(admin *Admin, w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	sessionToken, err := admin.Login(code)
 	if err != nil {
@@ -142,7 +142,7 @@ func login(admin Admin, w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func logout(admin Admin, w http.ResponseWriter, r *http.Request) {
+func logout(admin *Admin, w http.ResponseWriter, r *http.Request) {
 	cookie, _ := r.Cookie("session")
 	if cookie != nil {
 		admin.DeleteSession(cookie.Value)

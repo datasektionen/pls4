@@ -8,19 +8,19 @@ import (
 	"github.com/google/uuid"
 )
 
-func Mount(api API) {
+func Mount(api *API) {
 	http.Handle("/api/check-user", route(api, checkUser))
 	http.Handle("/api/list-for-user", route(api, listForUser))
 	http.Handle("/api/check-token", route(api, checkToken))
 }
 
-func route(api API, handler func(api API, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+func route(api *API, handler func(api *API, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
 	return func (w http.ResponseWriter, r *http.Request) {
 		handler(api, w, r)
 	}
 }
 
-func checkUser(api API, w http.ResponseWriter, r *http.Request) {
+func checkUser(api *API, w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var body struct {
 		KTHID      string `json:"kth_id"`
@@ -44,7 +44,7 @@ func checkUser(api API, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func listForUser(api API, w http.ResponseWriter, r *http.Request) {
+func listForUser(api *API, w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var body struct {
 		KTHID  string `json:"kth_id"`
@@ -67,7 +67,7 @@ func listForUser(api API, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func checkToken(api API, w http.ResponseWriter, r *http.Request) {
+func checkToken(api *API, w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var body struct {
 		Secret     uuid.UUID `json:"secret"`

@@ -6,7 +6,7 @@ import (
 	"github.com/datasektionen/pls4/models"
 )
 
-func (s *service) ListRoles(ctx context.Context) ([]models.Role, error) {
+func (s *Admin) ListRoles(ctx context.Context) ([]models.Role, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		select
 			r.id, r.display_name, r.description,
@@ -33,7 +33,7 @@ func (s *service) ListRoles(ctx context.Context) ([]models.Role, error) {
 	return roles, nil
 }
 
-func (s *service) GetRole(ctx context.Context, id string) (*models.Role, error) {
+func (s *Admin) GetRole(ctx context.Context, id string) (*models.Role, error) {
 	rows := s.db.QueryRowContext(ctx, `
 		select
 			r.id, r.display_name, r.description,
@@ -52,7 +52,7 @@ func (s *service) GetRole(ctx context.Context, id string) (*models.Role, error) 
 	return &r, err
 }
 
-func (s *service) GetSubroles(ctx context.Context, id string) ([]models.Role, error) {
+func (s *Admin) GetSubroles(ctx context.Context, id string) ([]models.Role, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		select
 			r.id, r.display_name, r.description,
@@ -81,7 +81,7 @@ func (s *service) GetSubroles(ctx context.Context, id string) ([]models.Role, er
 	return roles, nil
 }
 
-func (s *service) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool, includeIndirect bool) ([]models.Member, error) {
+func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool, includeIndirect bool) ([]models.Member, error) {
 	query := `select
 		kth_id, comment, modified_by,
 		modified_at, start_date, end_date,
@@ -128,7 +128,7 @@ func (s *service) GetRoleMembers(ctx context.Context, id string, onlyCurrent boo
 	return members, nil
 }
 
-func (s *service) UpdateRole(ctx context.Context, kthID, roleID, displayName string) error {
+func (s *Admin) UpdateRole(ctx context.Context, kthID, roleID, displayName string) error {
 	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
 	} else if !ok {

@@ -15,7 +15,7 @@ type Template struct {
 	data any
 }
 
-func (s *service) RenderWithLayout(wr io.Writer, t Template, userID string) error {
+func (s *Admin) RenderWithLayout(wr io.Writer, t Template, userID string) error {
 	var buffer bytes.Buffer
 	if err := s.t.ExecuteTemplate(&buffer, t.name, t.data); err != nil {
 		return err
@@ -28,15 +28,15 @@ func (s *service) RenderWithLayout(wr io.Writer, t Template, userID string) erro
 	})
 }
 
-func (s *service) Render(wr io.Writer, t Template) error {
+func (s *Admin) Render(wr io.Writer, t Template) error {
 	return s.t.ExecuteTemplate(wr, t.name, t.data)
 }
 
-func (s *service) Roles(roles []models.Role) Template {
+func (s *Admin) Roles(roles []models.Role) Template {
 	return Template{"roles.html", http.StatusOK, roles}
 }
 
-func (s *service) Role(role models.Role, subroles []models.Role, members []models.Member, canUpdate bool) Template {
+func (s *Admin) Role(role models.Role, subroles []models.Role, members []models.Member, canUpdate bool) Template {
 	return Template{"role.html", http.StatusOK, map[string]any{
 		"ID": role.ID,
 		"DisplayName": role.DisplayName,
@@ -47,7 +47,7 @@ func (s *service) Role(role models.Role, subroles []models.Role, members []model
 	}}
 }
 
-func (s *service) RoleName(id, displayName string, canUpdate bool) Template {
+func (s *Admin) RoleName(id, displayName string, canUpdate bool) Template {
 	return Template{"role-name", http.StatusOK, map[string]any{
 		"ID": id,
 		"DisplayName": displayName,
@@ -55,11 +55,11 @@ func (s *service) RoleName(id, displayName string, canUpdate bool) Template {
 	}}
 }
 
-func (s *service) RoleEditName(id, displayName string) Template {
+func (s *Admin) RoleEditName(id, displayName string) Template {
 	return Template{"role-edit-name", http.StatusOK, map[string]any{"ID": id, "DisplayName": displayName}}
 }
 
-func (s *service) Error(code int, messages ...string) Template {
+func (s *Admin) Error(code int, messages ...string) Template {
 	return Template{"error.html", code, map[string]any{
 		"StatusCode": code,
 		"StatusText": http.StatusText(code),
