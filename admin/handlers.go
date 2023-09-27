@@ -2,7 +2,6 @@ package admin
 
 import (
 	"context"
-	"log/slog"
 	"time"
 
 	"github.com/datasektionen/pls4/models"
@@ -178,7 +177,6 @@ func (s *Admin) RemoveSubrole(ctx context.Context, kthID, roleID, subroleID stri
 	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
 	} else if !ok {
-		slog.Info("No update for you", "kthid", kthID, "roleid", roleID)
 		// TODO: return an error
 		return nil
 	}
@@ -250,6 +248,34 @@ func (s *Admin) AddMember(
 		insert into roles_users (role_id, kth_id, comment, modified_by, start_date, end_date)
 		values ($1, $2, $3, $4, $5, $6)
 	`, roleID, memberKTHID, comment, kthID, startDate, endDate)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		// TODO: invalid id
+	}
+	return nil
+}
+
+func (s *Admin) RemoveMember(
+	ctx context.Context,
+	kthID, roleID string,
+	memberID uuid.UUID,
+) error {
+	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
+		return err
+	} else if !ok {
+		// TODO: return an error
+		return nil
+	}
+	res, err := s.db.ExecContext(ctx, `
+		delete from roles_users
+		where role_id = $1 and id = $2
+	`, roleID, memberID)
 	if err != nil {
 		return err
 	}

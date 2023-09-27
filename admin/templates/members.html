@@ -38,8 +38,9 @@
             <span>{{ date .StartDate }} - {{ date .EndDate }}</span>
             <span>{{ .Comment }}</span>
             {{ if $role.CanUpdate }}
-                <form class="text-amber-800" hx-get="/role/member">
-                    <input type="submit" value="Edit" class="cursor-pointer" />
+                <form hx-get="/role/member">
+                    <input class="cursor-pointer text-green-800" type="submit" value="Edit" />
+                    <input class="cursor-pointer text-red-800" type="submit" name="action" value="Remove" hx-post="/role/member" />
                     <input type="hidden" name="member" value="{{ .MemberID }}" />
                     <input type="hidden" name="id" value="{{ $role.ID }}" />
                 </form>

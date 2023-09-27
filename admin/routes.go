@@ -243,13 +243,21 @@ func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template
 	}
 
 	action := r.FormValue("action")
+
+	if action == "Remove" {
+		if err := admin.RemoveMember(ctx, session.KTHID, id, member); err != nil {
+			slog.Error("Could not edit member", "error", err, "member", member)
+			return admin.t.Error(http.StatusInternalServerError)
+		}
+	}
+
 	kthID := r.FormValue("kth-id")
 	startDate, err := time.Parse(time.DateOnly, r.FormValue("start-date"))
-	if err != nil {
+	if err != nil && r.Form.Has("start-date") {
 		return admin.t.Error(http.StatusBadRequest)
 	}
 	endDate, err := time.Parse(time.DateOnly, r.FormValue("end-date"))
-	if err != nil {
+	if err != nil && r.Form.Has("end-date") {
 		return admin.t.Error(http.StatusBadRequest)
 	}
 	comment := r.FormValue("comment")
