@@ -2,7 +2,7 @@
 <h1
     class="text-3xl font-bold"
     {{ if .CanUpdate }}
-        hx-get="/role/name/{{ .ID }}"
+        hx-get="/role/name?id={{ .ID }}"
         hx-swap="outerHTML"
         hx-target="this"
     {{ end }}
@@ -16,7 +16,7 @@
 {{ define "role-edit-name" }}
 <form
     class="text-3xl"
-    hx-post="/role/name/{{ .ID }}"
+    hx-post="/role/name?id={{ .ID }}"
     hx-swap="outerHTML"
     hx-target="this"
 >
@@ -29,7 +29,7 @@
 <p
     class="p-2"
     {{ if .CanUpdate }}
-        hx-get="/role/description/{{ .ID }}"
+        hx-get="/role/description?id={{ .ID }}"
         hx-swap="outerHTML"
         hx-target="this"
     {{ end }}
@@ -42,7 +42,7 @@
 {{ end }}
 {{ define "role-edit-description" }}
 <form
-    hx-post="/role/description/{{ .ID }}"
+    hx-post="/role/description?id={{ .ID }}"
     hx-swap="outerHTML"
     hx-target="this"
 >

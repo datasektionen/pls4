@@ -11,8 +11,8 @@ func Mount(admin *Admin) {
 	http.Handle("/", page(admin, index))
 	http.Handle("/role/", http.StripPrefix("/role/", page(admin, role)))
 	http.Handle("/role/subrole", partial(admin, roleSubrole))
-	http.Handle("/role/name/", http.StripPrefix("/role/name/", partial(admin, roleName)))
-	http.Handle("/role/description/", http.StripPrefix("/role/description/", partial(admin, roleDescription)))
+	http.Handle("/role/name", partial(admin, roleName))
+	http.Handle("/role/description", partial(admin, roleDescription))
 
 	http.Handle("/login", route(admin, login))
 	http.Handle("/logout", route(admin, logout))
@@ -101,7 +101,7 @@ func role(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 }
 
 func roleName(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
-	id := r.URL.Path
+	id := r.FormValue("id")
 
 	if r.Method == http.MethodPost {
 		displayName := r.FormValue("display-name")
@@ -129,7 +129,7 @@ func roleName(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 }
 
 func roleDescription(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
-	id := r.URL.Path
+	id := r.FormValue("id")
 
 	if r.Method == http.MethodPost {
 		description := r.FormValue("description")
