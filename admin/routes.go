@@ -3,6 +3,8 @@ package admin
 import (
 	"log/slog"
 	"net/http"
+
+	t "github.com/datasektionen/pls4/admin/templates"
 )
 
 func Mount(admin *Admin) {
@@ -14,25 +16,25 @@ func Mount(admin *Admin) {
 	http.Handle("/logout", route(admin, logout))
 }
 
-func route(admin *Admin, handler func(t *Admin, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+func route(admin *Admin, handler func(s *Admin, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		handler(admin, w, r)
 	}
 }
 
-func page(admin *Admin, handler func(t *Admin, w http.ResponseWriter, r *http.Request) Template) http.HandlerFunc {
+func page(admin *Admin, handler func(s *Admin, w http.ResponseWriter, r *http.Request) t.Template) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t := handler(admin, w, r)
 		var err error
 		if r.Header.Get("HX-Boosted") == "true" {
-			err = admin.Render(w, t)
+			err = admin.t.Render(w, t)
 		} else {
-			if t.code != 0 {
-				w.WriteHeader(t.code)
+			if t.Code != 0 {
+				w.WriteHeader(t.Code)
 			}
 			session, _ := admin.GetSession(r)
 			if err == nil {
-				err = admin.RenderWithLayout(w, t, session.DisplayName)
+				err = admin.t.RenderWithLayout(w, t, session.DisplayName)
 			}
 		}
 		if err != nil {
@@ -42,61 +44,61 @@ func page(admin *Admin, handler func(t *Admin, w http.ResponseWriter, r *http.Re
 	}
 }
 
-func partial(admin *Admin, handler func(t *Admin, w http.ResponseWriter, r *http.Request) Template) http.HandlerFunc {
+func partial(admin *Admin, handler func(s *Admin, w http.ResponseWriter, r *http.Request) t.Template) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t := handler(admin, w, r)
-		if err := admin.Render(w, t); err != nil {
+		if err := admin.t.Render(w, t); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			slog.Error("Could not render template", "error", err)
 		}
 	}
 }
 
-func index(admin *Admin, w http.ResponseWriter, r *http.Request) Template {
+func index(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 	roles, err := admin.ListRoles(r.Context())
 	if err != nil {
 		slog.Error("Could not get roles", "error", err)
-		return admin.Error(http.StatusInternalServerError)
+		return admin.t.Error(http.StatusInternalServerError)
 	}
-	return admin.Roles(roles)
+	return admin.t.Roles(roles)
 }
 
-func role(admin *Admin, w http.ResponseWriter, r *http.Request) Template {
+func role(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 	ctx := r.Context()
 
 	id := r.URL.Path
 	role, err := admin.GetRole(ctx, id)
 	if err != nil {
 		slog.Error("Could not get role", "error", err, "role_id", id)
-		return admin.Error(http.StatusInternalServerError)
+		return admin.t.Error(http.StatusInternalServerError)
 	}
 	if role == nil {
-		return admin.Error(http.StatusNotFound, "No role with id "+id)
+		return admin.t.Error(http.StatusNotFound, "No role with id "+id)
 	}
 	subroles, err := admin.GetSubroles(ctx, id)
 	if err != nil {
 		slog.Error("Could not get subroles", "error", err, "role_id", id)
-		return admin.Error(http.StatusInternalServerError)
+		return admin.t.Error(http.StatusInternalServerError)
 	}
 	members, err := admin.GetRoleMembers(ctx, id, true, true)
 	if err != nil {
 		slog.Error("Could not get role members", "error", err, "role_id", id)
-		return admin.Error(http.StatusInternalServerError)
+		return admin.t.Error(http.StatusInternalServerError)
 	}
 	session, err := admin.GetSession(r)
 	if err != nil{
 		slog.Error("Could not get current session", "error", err, "role_id", id)
-		return admin.Error(http.StatusInternalServerError)
+		return admin.t.Error(http.StatusInternalServerError)
 	}
 	canUpdate, err := admin.CanUpdateRole(ctx, session.KTHID, id)
 	if err != nil {
 		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
-		return admin.Error(http.StatusInternalServerError)
+		return admin.t.Error(http.StatusInternalServerError)
 	}
-	return admin.Role(*role, subroles, members, canUpdate)
+	return admin.t.Role(*role, subroles, members, canUpdate)
 }
 
-func roleName(admin *Admin, w http.ResponseWriter, r *http.Request) Template {
+func roleName(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 	id := r.URL.Path
 
 	if r.Method == http.MethodPost {
@@ -104,22 +106,22 @@ func roleName(admin *Admin, w http.ResponseWriter, r *http.Request) Template {
 		session, err := admin.GetSession(r)
 		if err != nil {
 			// TODO: redirect to login?
-			return admin.Error(http.StatusUnauthorized)
+			return admin.t.Error(http.StatusUnauthorized)
 		}
 		if err := admin.UpdateRole(r.Context(), session.KTHID, id, displayName); err != nil {
-			return admin.Error(http.StatusInternalServerError)
+			return admin.t.Error(http.StatusInternalServerError)
 		}
-		return admin.RoleName(id, displayName, true)
+		return admin.t.RoleName(id, displayName, true)
 	} else {
 		role, err := admin.GetRole(r.Context(), id)
 		if err != nil {
 			slog.Error("Could not get role", "error", err, "role_id", id)
-			return admin.Error(http.StatusInternalServerError)
+			return admin.t.Error(http.StatusInternalServerError)
 		}
 		if role == nil {
-			return admin.Error(http.StatusNotFound, "No role with id "+id)
+			return admin.t.Error(http.StatusNotFound, "No role with id "+id)
 		}
-		return admin.RoleEditName(role.ID, role.DisplayName)
+		return admin.t.RoleEditName(role.ID, role.DisplayName)
 	}
 }
 
