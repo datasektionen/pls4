@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/datasektionen/pls4/models"
 )
@@ -94,11 +95,11 @@ func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool,
 				select subrole_id
 				from roles_roles
 				where superrole_id = $1
-				union all
+				union
 				select subrole_id from all_subroles
 				inner join roles_roles
 				on superrole_id = role_id
-		) ` + query + ` union all
+		) ` + query + ` union
 		select
 			kth_id, '' as comment, '' as modified_by,
 			max(modified_at), min(start_date), max(end_date),
@@ -149,6 +150,48 @@ func (s *Admin) UpdateRole(ctx context.Context, kthID, roleID, displayName strin
 	}
 	if n != 1 {
 		// TODO: invalid id
+	}
+	return nil
+}
+
+func (s *Admin) AddSubrole(ctx context.Context, kthID, roleID, subroleID string) error {
+	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
+		return err
+	} else if !ok {
+		// TODO: return an error
+		return nil
+	}
+	_, err := s.db.ExecContext(ctx, `
+		insert into roles_roles (superrole_id, subrole_id)
+		values ($1, $2)
+	`, roleID, subroleID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Admin) RemoveSubrole(ctx context.Context, kthID, roleID, subroleID string) error {
+	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
+		return err
+	} else if !ok {
+		slog.Info("No update for you", "kthid", kthID, "roleid", roleID)
+		// TODO: return an error
+		return nil
+	}
+	res, err := s.db.ExecContext(ctx, `
+		delete from roles_roles
+		where superrole_id = $1 and subrole_id = $2
+	`, roleID, subroleID)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		// TODO: invalid roleID didn't have subroleID as a subrole
 	}
 	return nil
 }

@@ -60,6 +60,14 @@ func (s *Templates) Render(wr io.Writer, t Template) error {
 	return s.t.ExecuteTemplate(wr, t.name, t.data)
 }
 
+func (s *Templates) Error(code int, messages ...string) Template {
+	return Template{code, "error.html", map[string]any{
+		"StatusCode": code,
+		"StatusText": http.StatusText(code),
+		"Messages":   messages,
+	}}
+}
+
 func (s *Templates) Roles(roles []models.Role) Template {
 	return Template{http.StatusOK, "roles.html", roles}
 }
@@ -87,10 +95,14 @@ func (s *Templates) RoleEditName(id, displayName string) Template {
 	return Template{http.StatusOK, "role-edit-name", map[string]any{"ID": id, "DisplayName": displayName}}
 }
 
-func (s *Templates) Error(code int, messages ...string) Template {
-	return Template{code, "error.html", map[string]any{
-		"StatusCode": code,
-		"StatusText": http.StatusText(code),
-		"Messages":   messages,
+func (s *Templates) Subroles(id string, subroles []models.Role, canUpdate bool) Template {
+	return Template{http.StatusOK, "subroles.html", map[string]any{
+		"ID":        id,
+		"Subroles":  subroles,
+		"CanUpdate": canUpdate,
 	}}
+}
+
+func (s *Templates) RoleAddSubroleForm(id string, options []models.Role) Template {
+	return Template{http.StatusOK, "add-subrole", map[string]any{"ID": id, "Options": options}}
 }

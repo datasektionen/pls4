@@ -1,0 +1,49 @@
+<section class="subroles">
+    <section class="grid grid-cols-3 gap-2 items-center p-4">
+        <p class="font-bold">Name</p>
+        <p class="font-bold">Members</p>
+        <p class="font-bold">{{ if .CanUpdate }}Options{{ end }}</p>
+        {{ $role := . }}
+        {{ range .Subroles }}
+            <hr class="col-span-3">
+            <a href="/role/{{ .ID }}">{{ .DisplayName }}</a>
+            <span>
+                {{ if gt .SubroleCount 0 }}
+                    <p>{{ .SubroleCount }} sub-role{{ if ne .SubroleCount 1 }}s{{ end }}</p>
+                {{ end }}
+                {{ if gt .MemberCount 0 }}
+                    <p>{{ .MemberCount }} member{{ if ne .SubroleCount 1 }}s{{ end }}</p>
+                {{ end }}
+            </span>
+            {{ if $role.CanUpdate }}
+                <form class="text-red-800" hx-post="/role/subrole" hx-target="closest .subroles">
+                    <input type="submit" name="action" value="Remove" class="cursor-pointer" />
+                    <input type="hidden" name="id" value="{{ $role.ID }}" />
+                    <input type="hidden" name="subrole" value="{{ .ID }}" />
+                </form>
+            {{ else }}
+                <div><div/>
+            {{ end }}
+        {{ end }}
+    </section>
+
+    {{ define "add-subrole-button" }}
+        <section class="p-4 pt-0" hx-target="this" hx-swap="outerHTML">
+            <button class="bg-slate-300 w-8 h-8" hx-get="/role/subrole?id={{ .ID }}">+</button>
+        </section>
+    {{ end }}
+    {{ define "add-subrole" }}
+        <form hx-post="/role/subrole" class="flex gap-2 p-4 pt-0" hx-target="closest .subroles">
+            <input type="hidden" name="id" value="{{ .ID }}" />
+            <select name="subrole" class="p-2">
+                {{ range .Options }}
+                    <option value="{{ .ID }}">{{ .DisplayName }}</option>
+                {{ end }}
+            </select>
+            <input type="submit" name="action" value="Add" class="bg-blue-300 px-2 rounded-md" />
+        </form>
+    {{ end }}
+    {{ if .CanUpdate }}
+        {{ template "add-subrole-button" . }}
+    {{ end }}
+</section>

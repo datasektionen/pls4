@@ -10,6 +10,7 @@ import (
 func Mount(admin *Admin) {
 	http.Handle("/", page(admin, index))
 	http.Handle("/role/", http.StripPrefix("/role/", page(admin, role)))
+	http.Handle("/role/subrole", partial(admin, roleSubrole))
 	http.Handle("/role/name/", http.StripPrefix("/role/name/", partial(admin, roleName)))
 
 	http.Handle("/login", route(admin, login))
@@ -86,7 +87,7 @@ func role(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 		return admin.t.Error(http.StatusInternalServerError)
 	}
 	session, err := admin.GetSession(r)
-	if err != nil{
+	if err != nil {
 		slog.Error("Could not get current session", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
@@ -123,6 +124,59 @@ func roleName(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 		}
 		return admin.t.RoleEditName(role.ID, role.DisplayName)
 	}
+}
+
+func roleSubrole(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
+	ctx := r.Context()
+	if r.Method == http.MethodGet {
+		id := r.URL.Query().Get("id")
+
+		options, err := admin.ListRoles(ctx)
+		if err != nil {
+			slog.Error("Could not list roles", "error", err)
+			return admin.t.Error(http.StatusInternalServerError)
+		}
+		return admin.t.RoleAddSubroleForm(id, options)
+	}
+
+	if r.Method != http.MethodPost {
+		return admin.t.Error(http.StatusMethodNotAllowed)
+	}
+
+	session, err := admin.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
+
+	id := r.FormValue("id")
+	subrole := r.FormValue("subrole")
+	action := r.FormValue("action")
+
+	slog.Info("roleSubrole", "id", id, "subrole", subrole)
+	if action == "Add" {
+		if err := admin.AddSubrole(ctx, session.KTHID, id, subrole); err != nil {
+			slog.Error("Could not add subrole", "error", err, "role_id", id, "subrole_id", subrole)
+			return admin.t.Error(http.StatusInternalServerError)
+		}
+	} else if action == "Remove" {
+		if err := admin.RemoveSubrole(ctx, session.KTHID, id, subrole); err != nil {
+			slog.Error("Could not remove subrole", "error", err, "role_id", id, "subrole_id", subrole)
+			return admin.t.Error(http.StatusInternalServerError)
+		}
+	}
+
+	subroles, err := admin.GetSubroles(ctx, id)
+	if err != nil {
+		slog.Error("Could not get subroles", "error", err, "role_id", id)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
+	canUpdate, err := admin.CanUpdateRole(ctx, session.KTHID, id)
+	if err != nil {
+		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
+	return admin.t.Subroles(id, subroles, canUpdate)
 }
 
 func login(admin *Admin, w http.ResponseWriter, r *http.Request) {

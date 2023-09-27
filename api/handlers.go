@@ -13,7 +13,7 @@ func (s *API) CheckUser(ctx context.Context, kthID, system, permission string) (
 		with recursive all_roles (role_id) as (
 			select role_id from roles_users
 			where kth_id = $1 and now() between start_date and end_date
-			union all
+			union
 			select superrole_id from all_roles
 			inner join roles_roles
 				on subrole_id = role_id
@@ -41,7 +41,7 @@ func (s *API) ListForUser(ctx context.Context, kthID, system string) ([]string, 
 		with recursive all_roles (role_id) as (
 			select role_id from roles_users
 			where kth_id = $1 and now() between start_date and end_date
-			union all
+			union
 			select superrole_id from all_roles
 			inner join roles_roles
 				on subrole_id = role_id
