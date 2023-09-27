@@ -9,3 +9,7 @@ func (s *Admin) MayUpdateRole(ctx context.Context, kthID, roleID string) (bool, 
 func (s *Admin) MayCreateRoles(ctx context.Context, kthID string) (bool, error) {
 	return s.api.CheckUser(ctx, kthID, "pls", "create-role")
 }
+
+func (s *Admin) MayDeleteRoles(ctx context.Context, kthID string) (bool, error) {
+	return s.api.CheckUser(ctx, kthID, "pls", "delete-role")
+}

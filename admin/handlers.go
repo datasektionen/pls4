@@ -2,6 +2,9 @@ package admin
 
 import (
 	"context"
+	"errors"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/datasektionen/pls4/models"
@@ -293,7 +296,7 @@ func (s *Admin) CreateRole(
 	ctx context.Context,
 	kthID, id, displayName, description string,
 ) error {
-	if ok, err := s.MayCreateRole(ctx, kthID); err != nil {
+	if ok, err := s.MayCreateRoles(ctx, kthID); err != nil {
 		return err
 	} else if !ok {
 		// TODO: return an error
@@ -304,4 +307,46 @@ func (s *Admin) CreateRole(
 		values ($1, $2, $3)
 	`, id, displayName, description)
 	return err
+}
+
+var tableRexeg = regexp.MustCompile(`on table "roles_(.*)"$`)
+func (s *Admin) DeleteRole(
+	ctx context.Context,
+	kthID, id string,
+) error {
+	if ok, err := s.MayDeleteRoles(ctx, kthID); err != nil {
+		return err
+	} else if !ok {
+		// TODO: return an error
+		return nil
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`
+		delete from roles_roles
+		where subrole_id = $1
+	`, id)
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	_, err = tx.Exec(`
+		delete from roles
+		where id = $1
+	`, id)
+	if err != nil && strings.HasPrefix(err.Error(), "pq: update or delete on table") {
+		match := tableRexeg.FindStringSubmatch(err.Error())
+		if len(match) > 1 {
+			table := match[1]
+			_ = tx.Rollback()
+			return errors.New("This role still has " + table + " connected. They must be removed first.")
+		}
+	}
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }

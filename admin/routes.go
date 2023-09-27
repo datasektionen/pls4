@@ -11,7 +11,7 @@ import (
 
 func Mount(admin *Admin) {
 	http.Handle("/", page(admin, index))
-	http.Handle("/create-role", partial(admin, createRole))
+	http.Handle("/roles", partial(admin, roles))
 	http.Handle("/role/", http.StripPrefix("/role/", page(admin, role)))
 	http.Handle("/role/name", partial(admin, roleName))
 	http.Handle("/role/description", partial(admin, roleDescription))
@@ -75,12 +75,17 @@ func index(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 		slog.Error("Could not check if user may create roles", "error", err, "kth_id", session.KTHID)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
+	mayDelete, err := admin.MayDeleteRoles(ctx, session.KTHID)
+	if err != nil {
+		slog.Error("Could not check if user may delete roles", "error", err, "kth_id", session.KTHID)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
 	roles, err := admin.ListRoles(ctx)
 	if err != nil {
 		slog.Error("Could not get roles", "error", err)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
-	return admin.t.Roles(roles, mayCreate)
+	return admin.t.Roles(roles, mayCreate, mayDelete)
 }
 
 func role(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
@@ -118,13 +123,13 @@ func role(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 	return admin.t.Role(*role, subroles, members, mayUpdate)
 }
 
-func createRole(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
+func roles(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 	if r.Method == http.MethodGet {
 		return admin.t.CreateRoleForm()
 	}
+	ctx := r.Context()
+	action := r.FormValue("action")
 	id := r.FormValue("id")
-	displayName := r.FormValue("display-name")
-	description := r.FormValue("description")
 
 	session, err := admin.GetSession(r)
 	if err != nil {
@@ -132,17 +137,36 @@ func createRole(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template
 		return admin.t.Error(http.StatusInternalServerError)
 	}
 
-	if err := admin.CreateRole(r.Context(), session.KTHID, id, displayName, description); err != nil {
-		slog.Error("Could not create role", "error", err, "role_id", id)
-		return admin.t.Error(http.StatusInternalServerError)
+	if action == "Create" {
+		displayName := r.FormValue("display-name")
+		description := r.FormValue("description")
+		if err := admin.CreateRole(ctx, session.KTHID, id, displayName, description); err != nil {
+			slog.Error("Could not create role", "error", err, "role_id", id)
+			return admin.t.Error(http.StatusInternalServerError)
+		}
+	} else if action == "Delete" {
+		if err := admin.DeleteRole(ctx, session.KTHID, id); err != nil {
+			slog.Error("Could not delete role", "error", err, "role_id", id)
+			return admin.t.Error(http.StatusInternalServerError)
+		}
 	}
 
+	mayCreate, err := admin.MayCreateRoles(ctx, session.KTHID)
+	if err != nil {
+		slog.Error("Could not check if user may create roles", "error", err, "kth_id", session.KTHID)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
+	mayDelete, err := admin.MayDeleteRoles(ctx, session.KTHID)
+	if err != nil {
+		slog.Error("Could not check if user may delete roles", "error", err, "kth_id", session.KTHID)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
 	roles, err := admin.ListRoles(r.Context())
 	if err != nil {
 		slog.Error("Could not get roles", "error", err)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
-	return admin.t.Roles(roles, true)
+	return admin.t.Roles(roles, mayCreate, mayDelete)
 }
 
 func roleName(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
