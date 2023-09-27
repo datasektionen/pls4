@@ -38,7 +38,7 @@ insert into roles_roles (superrole_id, subrole_id) values
 insert into roles_permissions (role_id, system, permission) values
     ('dfunkt', 'calypso', 'create'),
     ('dsys', 'pls', 'create-role'),
-    ('dsys', 'pls', 'role-ior');
+    ('dsys', 'pls', 'role-*');
 
 insert into api_tokens (id, description, expires_at)
 values ('689ad7d4-74d4-4e42-9836-451f1045f117', 'test', '2024-01-01');

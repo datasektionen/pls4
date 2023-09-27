@@ -23,7 +23,7 @@ func (s *API) CheckUser(ctx context.Context, kthID, system, permission string) (
 			inner join all_roles a
 				on a.role_id = p.role_id
 			where p.system = $2
-			and p.permission = $3
+			and $3 like replace(p.permission, '*', '%')
 		)
 		select exists(select 1 from found)
 	`, kthID, system, permission)
@@ -45,7 +45,7 @@ func (s *API) CheckToken(ctx context.Context, secret uuid.UUID, system, permissi
 			on tp.api_token_id = t.id
 		where t.secret = $1
 		and tp.system = $2
-		and tp.permission = $3
+		and $3 like replace(tp.permission, '*', '%')
 	`, secret, system, permission)
 	var id uuid.UUID
 	if err := row.Scan(&id); err == sql.ErrNoRows {
