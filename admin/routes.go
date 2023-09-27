@@ -11,6 +11,7 @@ import (
 
 func Mount(admin *Admin) {
 	http.Handle("/", page(admin, index))
+	http.Handle("/create-role", partial(admin, createRole))
 	http.Handle("/role/", http.StripPrefix("/role/", page(admin, role)))
 	http.Handle("/role/name", partial(admin, roleName))
 	http.Handle("/role/description", partial(admin, roleDescription))
@@ -60,12 +61,26 @@ func partial(admin *Admin, handler func(s *Admin, w http.ResponseWriter, r *http
 }
 
 func index(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
-	roles, err := admin.ListRoles(r.Context())
+	if r.URL.Path != "/" {
+		return admin.t.Error(http.StatusNotFound)
+	}
+	session, err := admin.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
+	ctx := r.Context()
+	mayCreate, err := admin.MayCreateRole(ctx, session.KTHID)
+	if err != nil {
+		slog.Error("Could not check if user may create role", "error", err, "kth_id", session.KTHID)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
+	roles, err := admin.ListRoles(ctx)
 	if err != nil {
 		slog.Error("Could not get roles", "error", err)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
-	return admin.t.Roles(roles)
+	return admin.t.Roles(roles, mayCreate)
 }
 
 func role(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
@@ -95,12 +110,39 @@ func role(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 		slog.Error("Could not get current session", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
-	canUpdate, err := admin.CanUpdateRole(ctx, session.KTHID, id)
+	canUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
 	if err != nil {
 		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
 	return admin.t.Role(*role, subroles, members, canUpdate)
+}
+
+func createRole(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
+	if r.Method == http.MethodGet {
+		return admin.t.CreateRoleForm()
+	}
+	id := r.FormValue("id")
+	displayName := r.FormValue("display-name")
+	description := r.FormValue("description")
+
+	session, err := admin.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err, "role_id", id)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
+
+	if err := admin.CreateRole(r.Context(), session.KTHID, id, displayName, description); err != nil {
+		slog.Error("Could not create role", "error", err, "role_id", id)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
+
+	roles, err := admin.ListRoles(r.Context())
+	if err != nil {
+		slog.Error("Could not get roles", "error", err)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
+	return admin.t.Roles(roles, true)
 }
 
 func roleName(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
@@ -203,7 +245,7 @@ func roleSubrole(admin *Admin, w http.ResponseWriter, r *http.Request) t.Templat
 		slog.Error("Could not get subroles", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
-	canUpdate, err := admin.CanUpdateRole(ctx, session.KTHID, id)
+	canUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
 	if err != nil {
 		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
@@ -223,7 +265,7 @@ func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template
 		return admin.t.Error(http.StatusInternalServerError)
 	}
 
-	canUpdate, err := admin.CanUpdateRole(ctx, session.KTHID, id)
+	canUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
 	if err != nil {
 		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)

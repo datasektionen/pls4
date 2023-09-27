@@ -75,8 +75,8 @@ func (s *Templates) Error(code int, messages ...string) Template {
 	}}
 }
 
-func (s *Templates) Roles(roles []models.Role) Template {
-	return Template{http.StatusOK, "roles.html", roles}
+func (s *Templates) Roles(roles []models.Role, mayCreate bool) Template {
+	return Template{http.StatusOK, "roles.html", map[string]any{"Roles": roles, "MayCreate": mayCreate}}
 }
 
 func (s *Templates) Role(role models.Role, subroles []models.Role, members []models.Member, canUpdate bool) Template {
@@ -134,4 +134,8 @@ func (s *Templates) Members(id string, members []models.Member, canUpdate bool, 
 
 func (s *Templates) RoleAddSubroleForm(id string, options []models.Role) Template {
 	return Template{http.StatusOK, "add-subrole", map[string]any{"ID": id, "Options": options}}
+}
+
+func (s *Templates) CreateRoleForm() Template {
+	return Template{http.StatusOK, "create-role", nil}
 }

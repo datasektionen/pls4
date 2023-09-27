@@ -3,7 +3,7 @@
     <p class="font-bold">Name</p>
     <p class="font-bold">Members</p>
     <p class="font-bold">Description</p>
-    {{ range . }}
+    {{ range .Roles }}
         <hr class="col-span-full">
         <a href="/role/{{ .ID }}">{{ .DisplayName }}</a>
         <span>
@@ -17,3 +17,19 @@
         <span>{{ .Description }}</span>
     {{ end }}
 </section>
+{{ if .MayCreate }}
+    <section class="p-4 pt-0" hx-target="this" hx-swap="outerHTML">
+        <button class="bg-slate-300 w-8 h-8" hx-get="/create-role">+</button>
+    </section>
+{{ end }}
+{{ define "create-role" }}
+    <form hx-post="/create-role" class="flex gap-2 flex-justify p-4 pt-0" hx-target="main" hx-swap="innerHTML">
+        <label for="id">ID:</label>
+        <input class="border-b border-black" type="text" id="id" name="id" />
+        <label class="ml-auto" for="display-name">Display name:</label>
+        <input class="border-b border-black" type="text" id="display-name" name="display-name" />
+        <label class="ml-auto" for="discription">Description:</label>
+        <input class="border-b border-black" type="text" id="description" name="description" />
+        <input type="submit" value="Create" class="bg-blue-300 px-2 rounded-md" />
+    </form>
+{{ end }}

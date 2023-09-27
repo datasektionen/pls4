@@ -130,7 +130,7 @@ func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool,
 }
 
 func (s *Admin) UpdateRole(ctx context.Context, kthID, roleID, displayName, description string) error {
-	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
+	if ok, err := s.MayUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
 	} else if !ok {
 		// TODO: return an error
@@ -157,7 +157,7 @@ func (s *Admin) UpdateRole(ctx context.Context, kthID, roleID, displayName, desc
 }
 
 func (s *Admin) AddSubrole(ctx context.Context, kthID, roleID, subroleID string) error {
-	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
+	if ok, err := s.MayUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
 	} else if !ok {
 		// TODO: return an error
@@ -174,7 +174,7 @@ func (s *Admin) AddSubrole(ctx context.Context, kthID, roleID, subroleID string)
 }
 
 func (s *Admin) RemoveSubrole(ctx context.Context, kthID, roleID, subroleID string) error {
-	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
+	if ok, err := s.MayUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
 	} else if !ok {
 		// TODO: return an error
@@ -205,7 +205,7 @@ func (s *Admin) UpdateMember(
 	endDate time.Time,
 	comment string,
 ) error {
-	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
+	if ok, err := s.MayUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
 	} else if !ok {
 		// TODO: return an error
@@ -238,7 +238,7 @@ func (s *Admin) AddMember(
 	startDate time.Time,
 	endDate time.Time,
 ) error {
-	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
+	if ok, err := s.MayUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
 	} else if !ok {
 		// TODO: return an error
@@ -266,7 +266,7 @@ func (s *Admin) RemoveMember(
 	kthID, roleID string,
 	memberID uuid.UUID,
 ) error {
-	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
+	if ok, err := s.MayUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
 	} else if !ok {
 		// TODO: return an error
@@ -287,4 +287,21 @@ func (s *Admin) RemoveMember(
 		// TODO: invalid id
 	}
 	return nil
+}
+
+func (s *Admin) CreateRole(
+	ctx context.Context,
+	kthID, id, displayName, description string,
+) error {
+	if ok, err := s.MayCreateRole(ctx, kthID); err != nil {
+		return err
+	} else if !ok {
+		// TODO: return an error
+		return nil
+	}
+	_, err := s.db.ExecContext(ctx, `
+		insert into roles (id, display_name, description)
+		values ($1, $2, $3)
+	`, id, displayName, description)
+	return err
 }
