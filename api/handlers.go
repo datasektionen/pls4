@@ -34,35 +34,6 @@ func (s *API) CheckUser(ctx context.Context, kthID, system, permission string) (
 	return found, nil
 }
 
-func (s *API) ListForUser(ctx context.Context, kthID, system string) ([]string, error) {
-	rows, err := s.db.QueryContext(ctx, `
-		with recursive all_roles (role_id) as (
-			select role_id from roles_users
-			where kth_id = $1 and now() between start_date and end_date
-			union
-			select superrole_id from all_roles
-			inner join roles_roles
-				on subrole_id = role_id
-		)
-		select permission from roles_permissions p
-		inner join all_roles a
-			on a.role_id = p.role_id
-		where system = $2
-	`, kthID, system)
-	if err != nil {
-		return nil, err
-	}
-	perms := make([]string, 0)
-	for rows.Next() {
-		var perm string
-		if err := rows.Scan(&perm); err != nil {
-			return nil, err
-		}
-		perms = append(perms, perm)
-	}
-	return perms, nil
-}
-
 func (s *API) CheckToken(ctx context.Context, secret uuid.UUID, system, permission string) (bool, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -93,3 +64,31 @@ func (s *API) CheckToken(ctx context.Context, secret uuid.UUID, system, permissi
 	return true, tx.Commit()
 }
 
+func (s *API) GetUserRaw(ctx context.Context, kthID, system string) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		with recursive all_roles (role_id) as (
+			select role_id from roles_users
+			where kth_id = $1 and now() between start_date and end_date
+			union
+			select superrole_id from all_roles
+			inner join roles_roles
+				on subrole_id = role_id
+		)
+		select permission from roles_permissions p
+		inner join all_roles a
+			on a.role_id = p.role_id
+		where system = $2
+	`, kthID, system)
+	if err != nil {
+		return nil, err
+	}
+	perms := make([]string, 0)
+	for rows.Next() {
+		var perm string
+		if err := rows.Scan(&perm); err != nil {
+			return nil, err
+		}
+		perms = append(perms, perm)
+	}
+	return perms, nil
+}

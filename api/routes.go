@@ -10,8 +10,8 @@ import (
 
 func Mount(api *API) {
 	http.Handle("/api/check-user", route(api, checkUser))
-	http.Handle("/api/list-for-user", route(api, listForUser))
 	http.Handle("/api/check-token", route(api, checkToken))
+	http.Handle("/api/get-user-raw", route(api, getUserRaw))
 }
 
 func route(api *API, handler func(api *API, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
@@ -44,29 +44,6 @@ func checkUser(api *API, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func listForUser(api *API, w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	var body struct {
-		KTHID  string `json:"kth_id"`
-		System string `json:"system"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	perms, err := api.ListForUser(ctx, body.KTHID, body.System)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		slog.ErrorContext(ctx, "Error listing permissions for user", "error", err)
-		return
-	}
-	if err := json.NewEncoder(w).Encode(perms); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		slog.ErrorContext(ctx, "Error writing body", "error", err)
-		return
-	}
-}
-
 func checkToken(api *API, w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var body struct {
@@ -82,6 +59,29 @@ func checkToken(api *API, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		slog.ErrorContext(ctx, "Error checking token permission", "error", err)
+		return
+	}
+	if err := json.NewEncoder(w).Encode(perms); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		slog.ErrorContext(ctx, "Error writing body", "error", err)
+		return
+	}
+}
+
+func getUserRaw(api *API, w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var body struct {
+		KTHID  string `json:"kth_id"`
+		System string `json:"system"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	perms, err := api.GetUserRaw(ctx, body.KTHID, body.System)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		slog.ErrorContext(ctx, "Error getting permissions for user", "error", err)
 		return
 	}
 	if err := json.NewEncoder(w).Encode(perms); err != nil {
