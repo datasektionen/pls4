@@ -1,5 +1,5 @@
 create table roles (
-    id           text primary key,
+    id           text primary key check(id ~ '^[a-z]+(-[a-z]+)*$'),
     display_name text not null,
     description  text not null
 );
@@ -15,7 +15,7 @@ create table roles_users (
     start_date  timestamp not null default now(),
     end_date    timestamp not null,
 
-    foreign key (role_id)     references roles (id)
+    foreign key (role_id) references roles (id)
 );
 
 create table roles_roles (
@@ -27,17 +27,13 @@ create table roles_roles (
     primary key (superrole_id, subrole_id)
 );
 
-create table permissions (
-    id     uuid primary key default gen_random_uuid(),
-    system text not null,
-    name   text not null
-);
-
 create table roles_permissions (
     role_id       text not null,
-    permission_id uuid not null,
+    system        text not null,
+    permission    text not null,
 
-    foreign key (permission_id) references permissions (id)
+    foreign key (role_id) references roles (id),
+    primary key (role_id, system, permission)
 );
 
 create table api_tokens (
@@ -52,11 +48,11 @@ create table api_tokens (
 
 create table api_tokens_permissions (
     api_token_id  uuid not null,
-    permission_id uuid not null,
+    system        text not null,
+    permission    text not null,
 
-    foreign key (api_token_id)  references api_tokens (id),
-    foreign key (permission_id) references permissions (id),
-    primary key (api_token_id, permission_id)
+    foreign key (api_token_id) references api_tokens (id),
+    primary key (api_token_id, system, permission)
 );
 
 create table sessions (

@@ -19,13 +19,11 @@ func (s *API) CheckUser(ctx context.Context, kthID, system, permission string) (
 				on subrole_id = role_id
 		),
 		found as (
-			select from permissions p
-			inner join roles_permissions gp
-				on gp.permission_id = p.id
-			inner join all_roles ag
-				on ag.role_id = gp.role_id
-			where system = $2
-			and name = $3
+			select from roles_permissions p
+			inner join all_roles a
+				on a.role_id = p.role_id
+			where p.system = $2
+			and p.permission = $3
 		)
 		select exists(select 1 from found)
 	`, kthID, system, permission)
@@ -46,17 +44,15 @@ func (s *API) ListForUser(ctx context.Context, kthID, system string) ([]string, 
 			inner join roles_roles
 				on subrole_id = role_id
 		)
-		select name from permissions p
-		inner join roles_permissions gp
-			on gp.permission_id = p.id
-		inner join all_roles ag
-			on ag.role_id = gp.role_id
+		select permission from roles_permissions p
+		inner join all_roles a
+			on a.role_id = p.role_id
 		where system = $2
 	`, kthID, system)
 	if err != nil {
 		return nil, err
 	}
-	var perms []string
+	perms := make([]string, 0)
 	for rows.Next() {
 		var perm string
 		if err := rows.Scan(&perm); err != nil {
@@ -76,11 +72,9 @@ func (s *API) CheckToken(ctx context.Context, secret uuid.UUID, system, permissi
 		select t.id from api_tokens t
 		inner join api_tokens_permissions tp
 			on tp.api_token_id = t.id
-		inner join permissions p
-			on p.id = tp.permission_id
 		where t.secret = $1
-		and system = $2
-		and name = $3
+		and tp.system = $2
+		and tp.permission = $3
 	`, secret, system, permission)
 	var id uuid.UUID
 	if err := row.Scan(&id); err == sql.ErrNoRows {
