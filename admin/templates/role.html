@@ -55,21 +55,4 @@
 {{ template "subroles.html" . }}
 
 <h2 class="text-xl">Members</h2>
-<section class="grid grid-cols-3 gap-2 items-center p-3">
-    <p class="font-bold">Name</p>
-    <p class="font-bold">Date range</p>
-    <p class="font-bold">Comment</p>
-    {{ range .Members }}
-        {{ if .Indirect }}
-            <hr class="col-span-3">
-            <span>{{ .KTHID }}</span>
-            <span></span>
-            <span></span>
-        {{ else }}
-            <hr class="col-span-3">
-            <span class="font-bold">{{ .KTHID }}</span>
-            <span>{{ date .StartDate }} - {{ date .EndDate }}</span>
-            <span>{{ .Comment }}</span>
-        {{ end }}
-    {{ end }}
-</section>
+{{ template "members.html" . }}

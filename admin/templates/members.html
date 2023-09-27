@@ -1,0 +1,49 @@
+<section
+    class="grid grid-cols-[repeat({{ if .CanUpdate }}4{{ else }}3{{ end }},auto)] gap-2 items-center p-3"
+    id="members"
+    hx-swap="outerHTML"
+    hx-target="this"
+>
+    <p class="font-bold">Name</p>
+    <p class="font-bold">Date range</p>
+    <p class="font-bold">Comment</p>
+    {{ if .CanUpdate }}<p class="font-bold">Options</p>{{ end }}
+    {{ $role := . }}
+    {{ range .Members }}
+        <hr class="col-span-full">
+        {{ if eq .MemberID nilUUID }}
+            <span>{{ .KTHID }}</span>
+            <span></span>
+            <span></span>
+            {{ if $role.CanUpdate }}<span></span>{{ end }}
+        {{ else if eq $role.ToUpdateID .MemberID }}
+            <span class="font-bold">{{ .KTHID }}</span>
+            <span>
+                <input type="date" name="start-date" value="{{ date .StartDate }}" /> -
+                <input type="date" name="end-date" value="{{ date .EndDate }}" />
+            </span>
+            <input type="text" name="comment" value="{{ .Comment }}" />
+            <span><input
+                type="submit"
+                name="action"
+                value="Edit"
+                class="cursor-pointer text-blue-700"
+                hx-post="/role/member"
+                hx-include="#members"
+            /></span>
+            <input type="hidden" name="id" value="{{ $role.ID }}" />
+            <input type="hidden" name="member" value="{{ .MemberID }}" />
+        {{ else }}
+            <span class="font-bold">{{ .KTHID }}</span>
+            <span>{{ date .StartDate }} - {{ date .EndDate }}</span>
+            <span>{{ .Comment }}</span>
+            {{ if $role.CanUpdate }}
+                <form class="text-amber-800" hx-get="/role/member">
+                    <input type="submit" name="action" value="Edit" class="cursor-pointer" />
+                    <input type="hidden" name="id" value="{{ $role.ID }}" />
+                    <input type="hidden" name="member" value="{{ .MemberID }}" />
+                </form>
+            {{ end }}
+        {{ end }}
+    {{ end }}
+</section>

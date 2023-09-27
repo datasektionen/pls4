@@ -1,11 +1,11 @@
-<section class="subroles">
-    <section class="grid grid-cols-3 gap-2 items-center p-4">
+<section id="subroles">
+    <section class="grid grid-cols-{{ if .CanUpdate }}3{{ else }}2{{ end }} gap-2 items-center p-4">
         <p class="font-bold">Name</p>
         <p class="font-bold">Members</p>
-        <p class="font-bold">{{ if .CanUpdate }}Options{{ end }}</p>
+        {{ if .CanUpdate }}<p class="font-bold">Options</p>{{ end }}
         {{ $role := . }}
         {{ range .Subroles }}
-            <hr class="col-span-3">
+            <hr class="col-span-full">
             <a href="/role/{{ .ID }}">{{ .DisplayName }}</a>
             <span>
                 {{ if gt .SubroleCount 0 }}
@@ -16,13 +16,11 @@
                 {{ end }}
             </span>
             {{ if $role.CanUpdate }}
-                <form class="text-red-800" hx-post="/role/subrole" hx-target="closest .subroles">
+                <form class="text-red-800" hx-post="/role/subrole" hx-target="#subroles">
                     <input type="submit" name="action" value="Remove" class="cursor-pointer" />
                     <input type="hidden" name="id" value="{{ $role.ID }}" />
                     <input type="hidden" name="subrole" value="{{ .ID }}" />
                 </form>
-            {{ else }}
-                <div><div/>
             {{ end }}
         {{ end }}
     </section>
@@ -33,7 +31,7 @@
         </section>
     {{ end }}
     {{ define "add-subrole" }}
-        <form hx-post="/role/subrole" class="flex gap-2 p-4 pt-0" hx-target="closest .subroles">
+        <form hx-post="/role/subrole" class="flex gap-2 p-4 pt-0" hx-target="#subroles">
             <input type="hidden" name="id" value="{{ .ID }}" />
             <select name="subrole" class="p-2">
                 {{ range .Options }}

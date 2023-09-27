@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/datasektionen/pls4/models"
 )
 
@@ -29,6 +30,9 @@ func New(loginURL string) (*Templates, error) {
 	funcs := map[string]any{
 		"date": func(date time.Time) string {
 			return date.Format(time.DateOnly)
+		},
+		"nilUUID": func() uuid.UUID {
+			return uuid.Nil
 		},
 	}
 
@@ -112,6 +116,15 @@ func (s *Templates) Subroles(id string, subroles []models.Role, canUpdate bool) 
 		"ID":        id,
 		"Subroles":  subroles,
 		"CanUpdate": canUpdate,
+	}}
+}
+
+func (s *Templates) Members(id string, members []models.Member, canUpdate bool, toUpdateID uuid.UUID) Template {
+	return Template{http.StatusOK, "members.html", map[string]any{
+		"ID":         id,
+		"Members":    members,
+		"CanUpdate":  canUpdate,
+		"ToUpdateID": toUpdateID,
 	}}
 }
 

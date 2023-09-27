@@ -3,8 +3,10 @@ package admin
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/datasektionen/pls4/models"
+	"github.com/google/uuid"
 )
 
 func (s *Admin) ListRoles(ctx context.Context) ([]models.Role, error) {
@@ -84,12 +86,12 @@ func (s *Admin) GetSubroles(ctx context.Context, id string) ([]models.Role, erro
 
 func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool, includeIndirect bool) ([]models.Member, error) {
 	query := `select
-		kth_id, comment, modified_by,
-		modified_at, start_date, end_date,
-		false
+		id, kth_id, comment, modified_by,
+		modified_at, start_date, end_date
 	from roles_users
 	where role_id = $1
-	and ($2 or now() between start_date and end_date)`
+	and ($2 or now() between start_date and end_date)
+	order by kth_id`
 	if includeIndirect {
 		query = `with recursive all_subroles (role_id) as (
 				select subrole_id
@@ -99,15 +101,15 @@ func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool,
 				select subrole_id from all_subroles
 				inner join roles_roles
 				on superrole_id = role_id
-		) ` + query + ` union
-		select
-			kth_id, '' as comment, '' as modified_by,
-			max(modified_at), min(start_date), max(end_date),
-			true
+		) (` + query + `) union all
+		(select
+			null as id, kth_id, '' as comment, '' as modified_by,
+			max(modified_at), min(start_date), max(end_date)
 		from all_subroles
 		inner join roles_users using (role_id)
 		where ($2 or now() between start_date and end_date)
-		group by kth_id`
+		group by kth_id
+		order by kth_id)`
 	}
 
 	rows, err := s.db.QueryContext(ctx, query, id, !onlyCurrent)
@@ -118,9 +120,8 @@ func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool,
 	for rows.Next() {
 		var m models.Member
 		if err := rows.Scan(
-			&m.KTHID, &m.Comment, &m.ModifiedBy,
+			&m.MemberID, &m.KTHID, &m.Comment, &m.ModifiedBy,
 			&m.ModifiedAt, &m.StartDate, &m.EndDate,
-			&m.Indirect,
 		); err != nil {
 			return nil, err
 		}
@@ -194,6 +195,41 @@ func (s *Admin) RemoveSubrole(ctx context.Context, kthID, roleID, subroleID stri
 	}
 	if n != 1 {
 		// TODO: invalid roleID didn't have subroleID as a subrole
+	}
+	return nil
+}
+
+func (s *Admin) UpdateMember(
+	ctx context.Context,
+	kthID, roleID string,
+	memberID uuid.UUID,
+	startDate time.Time,
+	endDate time.Time,
+	comment string,
+) error {
+	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
+		return err
+	} else if !ok {
+		// TODO: return an error
+		return nil
+	}
+	res, err := s.db.ExecContext(ctx, `
+		update roles_users
+		set
+			start_date = $3,
+			end_date = $4,
+			comment = $5
+		where id = $1 and role_id = $2
+	`, memberID, roleID, startDate, endDate, comment)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		// TODO: invalid id
 	}
 	return nil
 }

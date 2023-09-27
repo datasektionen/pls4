@@ -5,7 +5,7 @@
     <p class="font-bold">Members</p>
     <p class="font-bold">Description</p>
     {{ range . }}
-        <hr class="col-span-3">
+        <hr class="col-span-full">
         <a href="/role/{{ .ID }}">{{ .DisplayName }}</a>
         <span>
             {{ if gt .SubroleCount 0 }}

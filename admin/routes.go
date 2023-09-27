@@ -3,16 +3,19 @@ package admin
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	t "github.com/datasektionen/pls4/admin/templates"
+	"github.com/google/uuid"
 )
 
 func Mount(admin *Admin) {
 	http.Handle("/", page(admin, index))
 	http.Handle("/role/", http.StripPrefix("/role/", page(admin, role)))
-	http.Handle("/role/subrole", partial(admin, roleSubrole))
 	http.Handle("/role/name", partial(admin, roleName))
 	http.Handle("/role/description", partial(admin, roleDescription))
+	http.Handle("/role/subrole", partial(admin, roleSubrole))
+	http.Handle("/role/member", partial(admin, roleMember))
 
 	http.Handle("/login", route(admin, login))
 	http.Handle("/logout", route(admin, logout))
@@ -183,7 +186,6 @@ func roleSubrole(admin *Admin, w http.ResponseWriter, r *http.Request) t.Templat
 	subrole := r.FormValue("subrole")
 	action := r.FormValue("action")
 
-	slog.Info("roleSubrole", "id", id, "subrole", subrole)
 	if action == "Add" {
 		if err := admin.AddSubrole(ctx, session.KTHID, id, subrole); err != nil {
 			slog.Error("Could not add subrole", "error", err, "role_id", id, "subrole_id", subrole)
@@ -207,6 +209,68 @@ func roleSubrole(admin *Admin, w http.ResponseWriter, r *http.Request) t.Templat
 		return admin.t.Error(http.StatusInternalServerError)
 	}
 	return admin.t.Subroles(id, subroles, canUpdate)
+}
+
+func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
+	ctx := r.Context()
+	id := r.FormValue("id")
+	member, _ := uuid.Parse(r.FormValue("member"))
+	slog.Info("roleMember", "member", member)
+
+	session, err := admin.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
+
+	canUpdate, err := admin.CanUpdateRole(ctx, session.KTHID, id)
+	if err != nil {
+		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
+
+	if r.Method == http.MethodGet {
+		members, err := admin.GetRoleMembers(ctx, id, true, true)
+		if err != nil {
+			slog.Error("Could not list roles", "error", err)
+			return admin.t.Error(http.StatusInternalServerError)
+		}
+		return admin.t.Members(id, members, canUpdate, member)
+	}
+
+	if r.Method != http.MethodPost {
+		return admin.t.Error(http.StatusMethodNotAllowed)
+	}
+
+	action := r.FormValue("action")
+	startDate, err := time.Parse(time.DateOnly, r.FormValue("start-date"))
+	if err != nil {
+		return admin.t.Error(http.StatusBadRequest)
+	}
+	endDate, err := time.Parse(time.DateOnly, r.FormValue("end-date"))
+	if err != nil {
+		return admin.t.Error(http.StatusBadRequest)
+	}
+	comment := r.FormValue("comment")
+
+	if action == "Edit" {
+		if err := admin.UpdateMember(ctx, session.KTHID, id, member, startDate, endDate, comment); err != nil {
+			slog.Error("Could not edit member", "error", err, "member", member)
+			return admin.t.Error(http.StatusInternalServerError)
+		}
+	} /* else if action == "Remove" {
+		if err := admin.RemoveMember(ctx, session.KTHID, id, subrole); err != nil {
+			slog.Error("Could not remove subrole", "error", err, "role_id", id, "subrole_id", subrole)
+			return admin.t.Error(http.StatusInternalServerError)
+		}
+	}*/
+
+	members, err := admin.GetRoleMembers(ctx, id, true, true)
+	if err != nil {
+		slog.Error("Could not get members", "error", err, "role_id", id)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
+	return admin.t.Members(id, members, canUpdate, uuid.Nil)
 }
 
 func login(admin *Admin, w http.ResponseWriter, r *http.Request) {
