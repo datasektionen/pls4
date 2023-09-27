@@ -75,26 +75,30 @@ func (s *Templates) Error(code int, messages ...string) Template {
 	}}
 }
 
-func (s *Templates) Roles(roles []models.Role, mayCreate bool) Template {
-	return Template{http.StatusOK, "roles.html", map[string]any{"Roles": roles, "MayCreate": mayCreate}}
+func (s *Templates) Roles(roles []models.Role, mayCreate, mayDelete bool) Template {
+	return Template{http.StatusOK, "roles.html", map[string]any{
+		"Roles":     roles,
+		"MayCreate": mayCreate,
+		"MayDelete": mayDelete,
+	}}
 }
 
-func (s *Templates) Role(role models.Role, subroles []models.Role, members []models.Member, canUpdate bool) Template {
+func (s *Templates) Role(role models.Role, subroles []models.Role, members []models.Member, mayUpdate bool) Template {
 	return Template{http.StatusOK, "role.html", map[string]any{
 		"ID":          role.ID,
 		"DisplayName": role.DisplayName,
 		"Description": role.Description,
 		"Subroles":    subroles,
 		"Members":     members,
-		"CanUpdate":   canUpdate,
+		"MayUpdate":   mayUpdate,
 	}}
 }
 
-func (s *Templates) RoleName(id, displayName string, canUpdate bool) Template {
+func (s *Templates) RoleName(id, displayName string, mayUpdate bool) Template {
 	return Template{http.StatusOK, "role-name", map[string]any{
 		"ID":          id,
 		"DisplayName": displayName,
-		"CanUpdate":   canUpdate,
+		"MayUpdate":   mayUpdate,
 	}}
 }
 
@@ -102,11 +106,11 @@ func (s *Templates) RoleEditName(id, displayName string) Template {
 	return Template{http.StatusOK, "role-edit-name", map[string]any{"ID": id, "DisplayName": displayName}}
 }
 
-func (s *Templates) RoleDescription(id, description string, canUpdate bool) Template {
+func (s *Templates) RoleDescription(id, description string, mayUpdate bool) Template {
 	return Template{http.StatusOK, "role-description", map[string]any{
 		"ID":          id,
 		"Description": description,
-		"CanUpdate":   canUpdate,
+		"MayUpdate":   mayUpdate,
 	}}
 }
 
@@ -114,19 +118,19 @@ func (s *Templates) RoleEditDescription(id, description string) Template {
 	return Template{http.StatusOK, "role-edit-description", map[string]any{"ID": id, "Description": description}}
 }
 
-func (s *Templates) Subroles(id string, subroles []models.Role, canUpdate bool) Template {
+func (s *Templates) Subroles(id string, subroles []models.Role, mayUpdate bool) Template {
 	return Template{http.StatusOK, "subroles.html", map[string]any{
 		"ID":        id,
 		"Subroles":  subroles,
-		"CanUpdate": canUpdate,
+		"MayUpdate": mayUpdate,
 	}}
 }
 
-func (s *Templates) Members(id string, members []models.Member, canUpdate bool, toUpdateID uuid.UUID, addNew bool) Template {
+func (s *Templates) Members(id string, members []models.Member, mayUpdate bool, toUpdateID uuid.UUID, addNew bool) Template {
 	return Template{http.StatusOK, "members.html", map[string]any{
 		"ID":         id,
 		"Members":    members,
-		"CanUpdate":  canUpdate,
+		"MayUpdate":  mayUpdate,
 		"ToUpdateID": toUpdateID,
 		"AddNew":     addNew,
 	}}

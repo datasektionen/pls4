@@ -1,8 +1,8 @@
 <section id="subroles">
-    <section class="grid grid-cols-{{ if .CanUpdate }}3{{ else }}2{{ end }} gap-2 items-center p-4">
+    <section class="grid grid-cols-{{ if .MayUpdate }}3{{ else }}2{{ end }} gap-2 items-center p-4">
         <p class="font-bold">Name</p>
         <p class="font-bold">Members</p>
-        {{ if .CanUpdate }}<p class="font-bold">Options</p>{{ end }}
+        {{ if .MayUpdate }}<p class="font-bold">Options</p>{{ end }}
         {{ $role := . }}
         {{ range .Subroles }}
             <hr class="col-span-full">
@@ -15,7 +15,7 @@
                     <p>{{ .MemberCount }} member{{ if ne .SubroleCount 1 }}s{{ end }}</p>
                 {{ end }}
             </span>
-            {{ if $role.CanUpdate }}
+            {{ if $role.MayUpdate }}
                 <form class="text-red-800" hx-post="/role/subrole" hx-target="#subroles">
                     <input type="submit" name="action" value="Remove" class="cursor-pointer" />
                     <input type="hidden" name="id" value="{{ $role.ID }}" />
@@ -41,7 +41,7 @@
             <input type="submit" name="action" value="Add" class="bg-blue-300 px-2 rounded-md" />
         </form>
     {{ end }}
-    {{ if .CanUpdate }}
+    {{ if .MayUpdate }}
         {{ template "add-subrole-button" . }}
     {{ end }}
 </section>

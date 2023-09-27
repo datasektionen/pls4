@@ -70,9 +70,9 @@ func index(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 		return admin.t.Error(http.StatusInternalServerError)
 	}
 	ctx := r.Context()
-	mayCreate, err := admin.MayCreateRole(ctx, session.KTHID)
+	mayCreate, err := admin.MayCreateRoles(ctx, session.KTHID)
 	if err != nil {
-		slog.Error("Could not check if user may create role", "error", err, "kth_id", session.KTHID)
+		slog.Error("Could not check if user may create roles", "error", err, "kth_id", session.KTHID)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
 	roles, err := admin.ListRoles(ctx)
@@ -110,12 +110,12 @@ func role(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 		slog.Error("Could not get current session", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
-	canUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
+	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
 	if err != nil {
 		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
-	return admin.t.Role(*role, subroles, members, canUpdate)
+	return admin.t.Role(*role, subroles, members, mayUpdate)
 }
 
 func createRole(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
@@ -245,12 +245,12 @@ func roleSubrole(admin *Admin, w http.ResponseWriter, r *http.Request) t.Templat
 		slog.Error("Could not get subroles", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
-	canUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
+	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
 	if err != nil {
 		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
-	return admin.t.Subroles(id, subroles, canUpdate)
+	return admin.t.Subroles(id, subroles, mayUpdate)
 }
 
 func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
@@ -265,7 +265,7 @@ func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template
 		return admin.t.Error(http.StatusInternalServerError)
 	}
 
-	canUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
+	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
 	if err != nil {
 		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
@@ -277,7 +277,7 @@ func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template
 			slog.Error("Could not list roles", "error", err)
 			return admin.t.Error(http.StatusInternalServerError)
 		}
-		return admin.t.Members(id, members, canUpdate, member, addNew)
+		return admin.t.Members(id, members, mayUpdate, member, addNew)
 	}
 
 	if r.Method != http.MethodPost {
@@ -321,7 +321,7 @@ func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template
 		slog.Error("Could not get members", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
-	return admin.t.Members(id, members, canUpdate, uuid.Nil, false)
+	return admin.t.Members(id, members, mayUpdate, uuid.Nil, false)
 }
 
 func login(admin *Admin, w http.ResponseWriter, r *http.Request) {

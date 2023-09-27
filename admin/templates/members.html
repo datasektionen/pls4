@@ -1,5 +1,5 @@
 <section
-    class="grid grid-cols-[repeat({{ if .CanUpdate }}4{{ else }}3{{ end }},auto)] gap-2 items-center p-3"
+    class="grid grid-cols-[repeat({{ if .MayUpdate }}4{{ else }}3{{ end }},auto)] gap-2 items-center p-3"
     id="members"
     hx-swap="outerHTML"
     hx-target="this"
@@ -7,7 +7,7 @@
     <p class="font-bold">Name</p>
     <p class="font-bold">Date range</p>
     <p class="font-bold">Comment</p>
-    {{ if .CanUpdate }}<p class="font-bold">Options</p>{{ end }}
+    {{ if .MayUpdate }}<p class="font-bold">Options</p>{{ end }}
     {{ $role := . }}
     {{ range .Members }}
         <hr class="col-span-full">
@@ -15,7 +15,7 @@
             <span>{{ .KTHID }}</span>
             <span></span>
             <span></span>
-            {{ if $role.CanUpdate }}<span></span>{{ end }}
+            {{ if $role.MayUpdate }}<span></span>{{ end }}
         {{ else if eq $role.ToUpdateID .MemberID }}
             <span class="updating font-bold">{{ .KTHID }}</span>
             <span class="updating">
@@ -37,7 +37,7 @@
             <span class="font-bold">{{ .KTHID }}</span>
             <span>{{ date .StartDate }} - {{ date .EndDate }}</span>
             <span>{{ .Comment }}</span>
-            {{ if $role.CanUpdate }}
+            {{ if $role.MayUpdate }}
                 <form hx-get="/role/member">
                     <input class="cursor-pointer text-green-800" type="submit" value="Edit" />
                     <input
@@ -73,7 +73,7 @@
         <input type="hidden" name="member" value="{{ .MemberID }}" />
         <input type="hidden" name="id" value="{{ .ID }}" />
     {{ end }}
-    {{ if .CanUpdate }}
+    {{ if .MayUpdate }}
         <form hx-get="/role/member?new">
             <input class="bg-slate-300 w-8 h-8 cursor-pointer" type="submit" value="+" />
             <input type="hidden" name="id" value="{{ $role.ID }}" />

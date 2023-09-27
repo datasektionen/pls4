@@ -1,14 +1,14 @@
 {{ block "role-name" . }}
 <h1
     class="text-3xl font-bold"
-    {{ if .CanUpdate }}
+    {{ if .MayUpdate }}
         hx-get="/role/name?id={{ .ID }}"
         hx-swap="outerHTML"
         hx-target="this"
     {{ end }}
 >
     {{ .DisplayName }}
-    {{ if .CanUpdate }}
+    {{ if .MayUpdate }}
         <i class="fa-regular fa-pen-to-square"></i>
     {{ end }}
 </h1>
@@ -28,14 +28,14 @@
 {{ block "role-description" . }}
 <p
     class="p-2"
-    {{ if .CanUpdate }}
+    {{ if .MayUpdate }}
         hx-get="/role/description?id={{ .ID }}"
         hx-swap="outerHTML"
         hx-target="this"
     {{ end }}
 >
     {{ .Description }}
-    {{ if .CanUpdate }}
+    {{ if .MayUpdate }}
         <i class="fa-regular fa-pen-to-square"></i>
     {{ end }}
 </p>
