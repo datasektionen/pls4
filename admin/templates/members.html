@@ -40,7 +40,14 @@
             {{ if $role.CanUpdate }}
                 <form hx-get="/role/member">
                     <input class="cursor-pointer text-green-800" type="submit" value="Edit" />
-                    <input class="cursor-pointer text-red-800" type="submit" name="action" value="Remove" hx-post="/role/member" />
+                    <input
+                        class="cursor-pointer text-red-800"
+                        type="submit"
+                        name="action"
+                        value="Remove"
+                        hx-post="/role/member"
+                        hx-confirm="Are you sure? Prefer to set end date to yesterday"
+                    />
                     <input type="hidden" name="member" value="{{ .MemberID }}" />
                     <input type="hidden" name="id" value="{{ $role.ID }}" />
                 </form>
