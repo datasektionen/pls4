@@ -233,3 +233,32 @@ func (s *Admin) UpdateMember(
 	}
 	return nil
 }
+
+func (s *Admin) AddMember(
+	ctx context.Context,
+	kthID, roleID, memberKTHID, comment string,
+	startDate time.Time,
+	endDate time.Time,
+) error {
+	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
+		return err
+	} else if !ok {
+		// TODO: return an error
+		return nil
+	}
+	res, err := s.db.ExecContext(ctx, `
+		insert into roles_users (role_id, kth_id, comment, modified_by, start_date, end_date)
+		values ($1, $2, $3, $4, $5, $6)
+	`, roleID, memberKTHID, comment, kthID, startDate, endDate)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		// TODO: invalid id
+	}
+	return nil
+}

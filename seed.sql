@@ -1,9 +1,5 @@
 begin;
 
-insert into users values
-    ('vakant'),
-    ('turetek');
-
 insert into roles values
     ('ordf', 'Ordförande', 'Förför ord'),
     ('dsys', 'Systemansvarig', 'Ansvarar över System'),

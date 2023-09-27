@@ -17,33 +17,58 @@
             <span></span>
             {{ if $role.CanUpdate }}<span></span>{{ end }}
         {{ else if eq $role.ToUpdateID .MemberID }}
-            <span class="font-bold">{{ .KTHID }}</span>
-            <span>
+            <span class="updating font-bold">{{ .KTHID }}</span>
+            <span class="updating">
                 <input type="date" name="start-date" value="{{ date .StartDate }}" /> -
                 <input type="date" name="end-date" value="{{ date .EndDate }}" />
             </span>
-            <input type="text" name="comment" value="{{ .Comment }}" />
+            <input class="updating" type="text" name="comment" value="{{ .Comment }}" />
             <span><input
                 type="submit"
                 name="action"
-                value="Edit"
-                class="cursor-pointer text-blue-700"
+                value="Save"
+                class="updating cursor-pointer text-blue-700"
                 hx-post="/role/member"
-                hx-include="#members"
+                hx-include=".updating"
             /></span>
-            <input type="hidden" name="id" value="{{ $role.ID }}" />
-            <input type="hidden" name="member" value="{{ .MemberID }}" />
+            <input class="updating" type="hidden" name="member" value="{{ .MemberID }}" />
+            <input class="updating" type="hidden" name="id" value="{{ $role.ID }}" />
         {{ else }}
             <span class="font-bold">{{ .KTHID }}</span>
             <span>{{ date .StartDate }} - {{ date .EndDate }}</span>
             <span>{{ .Comment }}</span>
             {{ if $role.CanUpdate }}
                 <form class="text-amber-800" hx-get="/role/member">
-                    <input type="submit" name="action" value="Edit" class="cursor-pointer" />
-                    <input type="hidden" name="id" value="{{ $role.ID }}" />
+                    <input type="submit" value="Edit" class="cursor-pointer" />
                     <input type="hidden" name="member" value="{{ .MemberID }}" />
+                    <input type="hidden" name="id" value="{{ $role.ID }}" />
                 </form>
             {{ end }}
         {{ end }}
+    {{ end }}
+    {{ if .AddNew }}
+        <hr class="col-span-full">
+        <input autofocus class="font-bold" type="text" name="kth-id" />
+        <span>
+            <input type="date" name="start-date" value="{{ date now }}" /> -
+            <input type="date" name="end-date" />
+        </span>
+        <input type="text" name="comment" value="{{ .Comment }}" />
+        <span><input
+            type="submit"
+            name="action"
+            value="Add"
+            class="cursor-pointer text-blue-700"
+            hx-post="/role/member"
+            hx-include="#members"
+        /></span>
+        <input type="hidden" name="member" value="{{ .MemberID }}" />
+        <input type="hidden" name="id" value="{{ .ID }}" />
+    {{ end }}
+    {{ if .CanUpdate }}
+        <form hx-get="/role/member?new">
+            <input class="bg-slate-300 w-8 h-8 cursor-pointer" type="submit" value="+" />
+            <input type="hidden" name="id" value="{{ $role.ID }}" />
+        </form>
     {{ end }}
 </section>

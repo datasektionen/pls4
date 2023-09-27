@@ -215,7 +215,7 @@ func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template
 	ctx := r.Context()
 	id := r.FormValue("id")
 	member, _ := uuid.Parse(r.FormValue("member"))
-	slog.Info("roleMember", "member", member)
+	addNew := r.Form.Has("new")
 
 	session, err := admin.GetSession(r)
 	if err != nil {
@@ -235,7 +235,7 @@ func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template
 			slog.Error("Could not list roles", "error", err)
 			return admin.t.Error(http.StatusInternalServerError)
 		}
-		return admin.t.Members(id, members, canUpdate, member)
+		return admin.t.Members(id, members, canUpdate, member, addNew)
 	}
 
 	if r.Method != http.MethodPost {
@@ -243,6 +243,7 @@ func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template
 	}
 
 	action := r.FormValue("action")
+	kthID := r.FormValue("kth-id")
 	startDate, err := time.Parse(time.DateOnly, r.FormValue("start-date"))
 	if err != nil {
 		return admin.t.Error(http.StatusBadRequest)
@@ -253,24 +254,24 @@ func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template
 	}
 	comment := r.FormValue("comment")
 
-	if action == "Edit" {
+	if action == "Save" {
 		if err := admin.UpdateMember(ctx, session.KTHID, id, member, startDate, endDate, comment); err != nil {
 			slog.Error("Could not edit member", "error", err, "member", member)
 			return admin.t.Error(http.StatusInternalServerError)
 		}
-	} /* else if action == "Remove" {
-		if err := admin.RemoveMember(ctx, session.KTHID, id, subrole); err != nil {
-			slog.Error("Could not remove subrole", "error", err, "role_id", id, "subrole_id", subrole)
+	} else if action == "Add" {
+		if err := admin.AddMember(ctx, session.KTHID, id, kthID, comment, startDate, endDate); err != nil {
+			slog.Error("Could not add member", "error", err, "role_id", id, "kth_id", kthID)
 			return admin.t.Error(http.StatusInternalServerError)
 		}
-	}*/
+	}
 
 	members, err := admin.GetRoleMembers(ctx, id, true, true)
 	if err != nil {
 		slog.Error("Could not get members", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
-	return admin.t.Members(id, members, canUpdate, uuid.Nil)
+	return admin.t.Members(id, members, canUpdate, uuid.Nil, false)
 }
 
 func login(admin *Admin, w http.ResponseWriter, r *http.Request) {

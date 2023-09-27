@@ -1,7 +1,3 @@
-create table users (
-    kth_id text primary key
-);
-
 create table roles (
     id           text primary key,
     display_name text not null,
@@ -19,9 +15,7 @@ create table roles_users (
     start_date  timestamp not null default now(),
     end_date    timestamp not null,
 
-    foreign key (role_id)     references roles (id),
-    foreign key (kth_id)      references users (kth_id),
-    foreign key (modified_by) references users (kth_id)
+    foreign key (role_id)     references roles (id)
 );
 
 create table roles_roles (
@@ -69,7 +63,5 @@ create table sessions (
     id           uuid primary key default gen_random_uuid(),
     kth_id       text      not null,
     display_name text      not null,
-    last_used_at timestamp not null,
-
-    foreign key (kth_id) references users (kth_id)
+    last_used_at timestamp not null
 )

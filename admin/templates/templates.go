@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/datasektionen/pls4/models"
+	"github.com/google/uuid"
 )
 
 type Template struct {
@@ -33,6 +33,9 @@ func New(loginURL string) (*Templates, error) {
 		},
 		"nilUUID": func() uuid.UUID {
 			return uuid.Nil
+		},
+		"now": func() time.Time {
+			return time.Now()
 		},
 	}
 
@@ -119,12 +122,13 @@ func (s *Templates) Subroles(id string, subroles []models.Role, canUpdate bool) 
 	}}
 }
 
-func (s *Templates) Members(id string, members []models.Member, canUpdate bool, toUpdateID uuid.UUID) Template {
+func (s *Templates) Members(id string, members []models.Member, canUpdate bool, toUpdateID uuid.UUID, addNew bool) Template {
 	return Template{http.StatusOK, "members.html", map[string]any{
 		"ID":         id,
 		"Members":    members,
 		"CanUpdate":  canUpdate,
 		"ToUpdateID": toUpdateID,
+		"AddNew":     addNew,
 	}}
 }
 
