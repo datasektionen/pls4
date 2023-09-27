@@ -21,11 +21,35 @@
     hx-target="this"
 >
     <input name="display-name" type="text" value="{{ .DisplayName }}" />
-    <input type="submit" value="Save" />
+    <input class="bg-blue-300 p-2 rounded-sm" type="submit" value="Save" />
 </form>
 {{ end }}
 
-<p>{{ .Description }}</p>
+{{ block "role-description" . }}
+<p
+    class="p-2"
+    {{ if .CanUpdate }}
+        hx-get="/role/description/{{ .ID }}"
+        hx-swap="outerHTML"
+        hx-target="this"
+    {{ end }}
+>
+    {{ .Description }}
+    {{ if .CanUpdate }}
+        <i class="fa-regular fa-pen-to-square"></i>
+    {{ end }}
+</p>
+{{ end }}
+{{ define "role-edit-description" }}
+<form
+    hx-post="/role/description/{{ .ID }}"
+    hx-swap="outerHTML"
+    hx-target="this"
+>
+    <textarea required class="p-2 w-96" name="description">{{ .Description }}</textarea>
+    <input class="block bg-blue-300 p-1 rounded-sm" type="submit" value="Save" />
+</form>
+{{ end }}
 
 <h2 class="text-xl">Sub-roles</h2>
 {{ template "subroles.html" . }}

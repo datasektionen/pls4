@@ -12,6 +12,7 @@ func Mount(admin *Admin) {
 	http.Handle("/role/", http.StripPrefix("/role/", page(admin, role)))
 	http.Handle("/role/subrole", partial(admin, roleSubrole))
 	http.Handle("/role/name/", http.StripPrefix("/role/name/", partial(admin, roleName)))
+	http.Handle("/role/description/", http.StripPrefix("/role/description/", partial(admin, roleDescription)))
 
 	http.Handle("/login", route(admin, login))
 	http.Handle("/logout", route(admin, logout))
@@ -109,7 +110,8 @@ func roleName(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 			// TODO: redirect to login?
 			return admin.t.Error(http.StatusUnauthorized)
 		}
-		if err := admin.UpdateRole(r.Context(), session.KTHID, id, displayName); err != nil {
+		if err := admin.UpdateRole(r.Context(), session.KTHID, id, displayName, ""); err != nil {
+			slog.Error("Could not update role name", "error", err)
 			return admin.t.Error(http.StatusInternalServerError)
 		}
 		return admin.t.RoleName(id, displayName, true)
@@ -123,6 +125,34 @@ func roleName(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 			return admin.t.Error(http.StatusNotFound, "No role with id "+id)
 		}
 		return admin.t.RoleEditName(role.ID, role.DisplayName)
+	}
+}
+
+func roleDescription(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
+	id := r.URL.Path
+
+	if r.Method == http.MethodPost {
+		description := r.FormValue("description")
+		session, err := admin.GetSession(r)
+		if err != nil {
+			// TODO: redirect to login?
+			return admin.t.Error(http.StatusUnauthorized)
+		}
+		if err := admin.UpdateRole(r.Context(), session.KTHID, id, "", description); err != nil {
+			slog.Error("Could not update role description", "error", err)
+			return admin.t.Error(http.StatusInternalServerError)
+		}
+		return admin.t.RoleDescription(id, description, true)
+	} else {
+		role, err := admin.GetRole(r.Context(), id)
+		if err != nil {
+			slog.Error("Could not get role", "error", err, "role_id", id)
+			return admin.t.Error(http.StatusInternalServerError)
+		}
+		if role == nil {
+			return admin.t.Error(http.StatusNotFound, "No role with id "+id)
+		}
+		return admin.t.RoleEditDescription(role.ID, role.Description)
 	}
 }
 

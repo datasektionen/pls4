@@ -129,7 +129,7 @@ func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool,
 	return members, nil
 }
 
-func (s *Admin) UpdateRole(ctx context.Context, kthID, roleID, displayName string) error {
+func (s *Admin) UpdateRole(ctx context.Context, kthID, roleID, displayName, description string) error {
 	if ok, err := s.CanUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
 	} else if !ok {
@@ -138,9 +138,11 @@ func (s *Admin) UpdateRole(ctx context.Context, kthID, roleID, displayName strin
 	}
 	res, err := s.db.ExecContext(ctx, `
 		update roles
-		set display_name = $2
+		set
+			display_name = coalesce(nullif($2, ''), display_name),
+			description = coalesce(nullif($3, ''), description)
 		where id = $1
-	`, roleID, displayName)
+	`, roleID, displayName, description)
 	if err != nil {
 		return err
 	}

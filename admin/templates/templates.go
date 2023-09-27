@@ -95,6 +95,18 @@ func (s *Templates) RoleEditName(id, displayName string) Template {
 	return Template{http.StatusOK, "role-edit-name", map[string]any{"ID": id, "DisplayName": displayName}}
 }
 
+func (s *Templates) RoleDescription(id, description string, canUpdate bool) Template {
+	return Template{http.StatusOK, "role-description", map[string]any{
+		"ID":          id,
+		"Description": description,
+		"CanUpdate":   canUpdate,
+	}}
+}
+
+func (s *Templates) RoleEditDescription(id, description string) Template {
+	return Template{http.StatusOK, "role-edit-description", map[string]any{"ID": id, "Description": description}}
+}
+
 func (s *Templates) Subroles(id string, subroles []models.Role, canUpdate bool) Template {
 	return Template{http.StatusOK, "subroles.html", map[string]any{
 		"ID":        id,
