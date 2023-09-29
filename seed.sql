@@ -36,6 +36,13 @@ values (
     'turetek',
     '2019-06-27',
     '2026-06-27'
+), (
+    'kassor',
+    'gamling',
+    'Vald på Bar-SM 2018',
+    'turetek',
+    '2018-06-27',
+    '2019-04-20'
 );
 
 insert into roles_roles (superrole_id, subrole_id) values
