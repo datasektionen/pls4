@@ -9,13 +9,14 @@ import (
 )
 
 func Mount(api *API) {
-	http.Handle("/api/check-user", route(api, checkUser))
-	http.Handle("/api/check-token", route(api, checkToken))
-	http.Handle("/api/get-user-raw", route(api, getUserRaw))
+	http.Handle("/api/user/check", route(api, checkUser))
+	http.Handle("/api/user/filter", route(api, filterForUser))
+	http.Handle("/api/user/raw", route(api, getUserRaw))
+	http.Handle("/api/token/check", route(api, checkToken))
 }
 
 func route(api *API, handler func(api *API, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
-	return func (w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		handler(api, w, r)
 	}
 }
@@ -38,6 +39,30 @@ func checkUser(api *API, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := json.NewEncoder(w).Encode(ok); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		slog.ErrorContext(ctx, "Error writing body", "error", err)
+		return
+	}
+}
+
+func filterForUser(api *API, w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var body struct {
+		KTHID       string   `json:"kth_id"`
+		System      string   `json:"system"`
+		Permissions []string `json:"permissions"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	granted, err := api.FilterForUser(ctx, body.KTHID, body.System, body.Permissions)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		slog.ErrorContext(ctx, "Error checking user permission", "error", err)
+		return
+	}
+	if err := json.NewEncoder(w).Encode(granted); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		slog.ErrorContext(ctx, "Error writing body", "error", err)
 		return

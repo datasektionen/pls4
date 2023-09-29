@@ -4,6 +4,7 @@ insert into roles values
     ('ordf', 'Ordförande', 'Förför ord'),
     ('dsys', 'Systemansvarig', 'Ansvarar över System'),
     ('dfunkt', 'dFunkt', 'Alla dFunktionärer'),
+    ('kassor', 'Kassör', 'Cash yo'),
     ('ior', 'Informationsorganet', 'Informerar om organ');
 
 insert into roles_users (role_id, kth_id, comment, modified_by, start_date, end_date)
@@ -26,8 +27,15 @@ values (
     'vakant',
     '',
     'turetek',
-    '2023-09-09',
-    '2024-09-09'
+    '2023-06-27',
+    '2024-06-27'
+), (
+    'kassor',
+    'snoren',
+    'Vald på Bar-SM 2019',
+    'turetek',
+    '2019-06-27',
+    '2026-06-27'
 );
 
 insert into roles_roles (superrole_id, subrole_id) values
@@ -37,6 +45,8 @@ insert into roles_roles (superrole_id, subrole_id) values
 
 insert into roles_permissions (role_id, system, permission) values
     ('dfunkt', 'calypso', 'create'),
+    ('kassor', 'cashflow', 'attest-*'),
+    ('kassor', 'cashflow', 'confirm'),
     ('dsys', 'pls', 'create-role'),
     ('dsys', 'pls', '*');
 
