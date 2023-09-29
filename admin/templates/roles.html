@@ -36,7 +36,7 @@
         <button class="bg-slate-300 w-8 h-8" hx-get="/roles">+</button>
     </section>
 {{ end }}
-{{ define "roles" }}
+{{ define "create-role" }}
     <form hx-post="/roles" class="flex gap-2 flex-justify p-4 pt-0" hx-target="main" hx-swap="innerHTML">
         <label for="id">ID:</label>
         <input class="border-b border-black" type="text" id="id" name="id" />
