@@ -67,7 +67,11 @@ func (s *Admin) GetSession(r *http.Request) (Session, error) {
 		return Session{}, nil
 	}
 	id := cookie.Value
-	row := s.db.QueryRowContext(r.Context(), `
+	tx, err := s.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		return Session{}, err
+	}
+	row := tx.QueryRow(`
 		select kth_id, display_name
 		from sessions
 		where id = $1
@@ -77,9 +81,19 @@ func (s *Admin) GetSession(r *http.Request) (Session, error) {
 	if err := row.Scan(
 		&session.KTHID,
 		&session.DisplayName,
-	); err != nil && err != sql.ErrNoRows {
+	); err == sql.ErrNoRows {
+		return Session{}, nil
+	} else if err != nil {
 		slog.ErrorContext(r.Context(), "Could not get session from database", "id", id, "error", err)
+		_ = tx.Rollback()
 		return Session{}, err
 	}
-	return session, nil
+	if _, err := tx.Exec(`
+		update sessions
+		set last_used_at = now()
+		where id = $1
+	`, id); err != nil {
+		return Session{}, err
+	}
+	return session, tx.Commit()
 }
