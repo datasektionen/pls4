@@ -16,7 +16,7 @@
             <span></span>
             <span></span>
             {{ if $role.MayUpdate }}<span></span>{{ end }}
-        {{ else if eq $role.ToUpdateID .MemberID }}
+        {{ else if eq $role.ToUpdateMemberID .MemberID }}
             <span class="updating font-bold">{{ .KTHID }}</span>
             <span class="updating">
                 <input type="date" name="start-date" value="{{ date .StartDate }}" /> -

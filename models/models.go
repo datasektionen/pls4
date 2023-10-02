@@ -23,3 +23,9 @@ type Member struct {
 	StartDate  time.Time
 	EndDate    time.Time
 }
+
+type SystemPermissions struct {
+	System      string
+	Permissions []string
+	MayEdit     bool
+}

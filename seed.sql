@@ -52,6 +52,10 @@ insert into roles_roles (superrole_id, subrole_id) values
 
 insert into roles_permissions (role_id, system, permission) values
     ('dfunkt', 'calypso', 'create'),
+    ('dfunkt', 'calypso', 'event'),
+    ('dfunkt', 'pico', 'custom'),
+    ('dfunkt', 'dfunkt', 'search'),
+    ('dfunkt', 'dfunkt', 'nope'),
     ('kassor', 'cashflow', 'attest-*'),
     ('kassor', 'cashflow', 'confirm'),
     ('dsys', 'pls', 'create-role'),

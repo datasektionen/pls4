@@ -115,12 +115,17 @@ func role(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {
 		slog.Error("Could not get current session", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
+	permissions, err := admin.GetRolePermissions(ctx, id, session.KTHID)
+	if err != nil {
+		slog.Error("Could not get role persmissions", "error", err, "role_id", id)
+		return admin.t.Error(http.StatusInternalServerError)
+	}
 	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
 	if err != nil {
 		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
 		return admin.t.Error(http.StatusInternalServerError)
 	}
-	return admin.t.Role(*role, subroles, members, mayUpdate)
+	return admin.t.Role(*role, subroles, members, permissions, mayUpdate)
 }
 
 func roles(admin *Admin, w http.ResponseWriter, r *http.Request) t.Template {

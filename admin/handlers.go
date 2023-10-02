@@ -132,6 +132,40 @@ func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool,
 	return members, nil
 }
 
+func (s *Admin) GetRolePermissions(ctx context.Context, id, kthID string) ([]models.SystemPermissions, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		select system, permission
+		from roles_permissions
+		where role_id = $1
+		order by system
+	`, id)
+	if err != nil {
+		return nil, err
+	}
+	perms := make([]models.SystemPermissions, 1)
+	p := &perms[0]
+	for rows.Next() {
+		var system, permission string
+		if err := rows.Scan(&system, &permission); err != nil {
+			return nil, err
+		}
+		if p.System != system {
+			mayEdit, err := s.MayUpdatePermissions(ctx, kthID, system)
+			if err != nil {
+				return nil, err
+			}
+			perms = append(perms, models.SystemPermissions{
+				System:      system,
+				Permissions: []string{},
+				MayEdit:     mayEdit,
+			})
+			p = &perms[len(perms)-1]
+		}
+		p.Permissions = append(p.Permissions, permission)
+	}
+	return perms[1:], nil
+}
+
 func (s *Admin) UpdateRole(ctx context.Context, kthID, roleID, displayName, description string) error {
 	if ok, err := s.MayUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
@@ -310,6 +344,7 @@ func (s *Admin) CreateRole(
 }
 
 var tableRexeg = regexp.MustCompile(`on table "roles_(.*)"$`)
+
 func (s *Admin) DeleteRole(
 	ctx context.Context,
 	kthID, id string,

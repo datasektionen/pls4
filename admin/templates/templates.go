@@ -83,13 +83,14 @@ func (s *Templates) Roles(roles []models.Role, mayCreate, mayDelete bool) Templa
 	}}
 }
 
-func (s *Templates) Role(role models.Role, subroles []models.Role, members []models.Member, mayUpdate bool) Template {
+func (s *Templates) Role(role models.Role, subroles []models.Role, members []models.Member, permissions []models.SystemPermissions, mayUpdate bool) Template {
 	return Template{http.StatusOK, "role.html", map[string]any{
 		"ID":          role.ID,
 		"DisplayName": role.DisplayName,
 		"Description": role.Description,
 		"Subroles":    subroles,
 		"Members":     members,
+		"Permissions": permissions,
 		"MayUpdate":   mayUpdate,
 	}}
 }
@@ -126,13 +127,13 @@ func (s *Templates) Subroles(id string, subroles []models.Role, mayUpdate bool) 
 	}}
 }
 
-func (s *Templates) Members(id string, members []models.Member, mayUpdate bool, toUpdateID uuid.UUID, addNew bool) Template {
+func (s *Templates) Members(id string, members []models.Member, mayUpdate bool, toUpdateMemberID uuid.UUID, addNew bool) Template {
 	return Template{http.StatusOK, "members.html", map[string]any{
-		"ID":         id,
-		"Members":    members,
-		"MayUpdate":  mayUpdate,
-		"ToUpdateID": toUpdateID,
-		"AddNew":     addNew,
+		"ID":               id,
+		"Members":          members,
+		"MayUpdate":        mayUpdate,
+		"ToUpdateMemberID": toUpdateMemberID,
+		"AddNew":           addNew,
 	}}
 }
 
