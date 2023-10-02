@@ -3,13 +3,20 @@ package api
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log/slog"
+	"regexp"
 	"strings"
 
 	"github.com/google/uuid"
 )
 
+var permissionRegex = regexp.MustCompile("^[a-z]+(-[a-z]+)*$")
+
 func (s *API) CheckUser(ctx context.Context, kthID, system string, permission string) (bool, error) {
+	if !permissionRegex.MatchString(permission) {
+		return false, fmt.Errorf("Invalid permission %v. Must match %v", permission, permissionRegex)
+	}
 	rawPermissions, err := s.GetUserRaw(ctx, kthID, system)
 	if err != nil {
 		return false, err
