@@ -3,14 +3,12 @@ package admin
 import (
 	"database/sql"
 
-	"github.com/datasektionen/pls4/admin/templates"
 	"github.com/datasektionen/pls4/api"
 )
 
 type Admin struct {
 	db          *sql.DB
 	api         *api.API
-	t           *templates.Templates
 	loginURL    string
 	loginAPIKey string
 	hodisURL    string
@@ -23,12 +21,6 @@ func New(db *sql.DB, api *api.API, loginURL, loginAPIKey, hodisURL string) (*Adm
 	s.loginURL = loginURL
 	s.loginAPIKey = loginAPIKey
 	s.hodisURL = hodisURL
-
-	if t, err := templates.New(loginURL); err != nil {
-		return nil, err
-	} else {
-		s.t = t
-	}
 
 	s.db = db
 

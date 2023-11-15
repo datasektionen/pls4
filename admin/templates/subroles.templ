@@ -1,0 +1,58 @@
+package templates
+
+import (
+	"github.com/datasektionen/pls4/models"
+	"strconv"
+)
+
+templ Subroles(roleID string, subroles []models.Role, mayUpdate bool) {
+	<section id="subroles">
+		<section class={ "grid grid-cols-" + ternary(mayUpdate, "3", "2") + " gap-2 items-center p-4" }>
+			<p class="font-bold">Name</p>
+			<p class="font-bold">Members</p>
+			if mayUpdate {
+				<p class="font-bold">Options</p>
+			}
+			for _, subrole := range subroles {
+				<hr class="col-span-full"/>
+				<a href={ templ.URL("/role/" + subrole.ID) }>{ subrole.DisplayName }</a>
+				<span>
+					if subrole.SubroleCount > 0 {
+						<p>{ strconv.Itoa(subrole.SubroleCount) } sub-role{ plural(subrole.SubroleCount) }</p>
+					}
+					if subrole.MemberCount > 0 {
+						<p>{ strconv.Itoa(subrole.MemberCount) } member{ plural(subrole.MemberCount) }</p>
+					}
+				</span>
+				if mayUpdate {
+					<form class="text-red-800" hx-post="/role/subrole" hx-target="#subroles">
+						<input type="submit" name="action" value="Remove" class="cursor-pointer"/>
+						<input type="hidden" name="id" value={ roleID }/>
+						<input type="hidden" name="subrole" value={ subrole.ID }/>
+					</form>
+				}
+			}
+		</section>
+		if mayUpdate {
+			@AddSubroleButton(roleID)
+		}
+	</section>
+}
+
+templ AddSubroleButton(roleID string) {
+	<section class="p-4 pt-0" hx-target="this" hx-swap="outerHTML">
+		<button class="bg-slate-300 w-8 h-8" hx-get={ "/role/subrole?id=" + roleID }>+</button>
+	</section>
+}
+
+templ AddSubroleForm(roleID string, options []models.Role) {
+	<form hx-post="/role/subrole" class="flex gap-2 p-4 pt-0" hx-target="#subroles">
+		<input type="hidden" name="id" value={ roleID }/>
+		<select name="subrole" class="p-2">
+			for _, option := range options {
+				<option value={ option.ID }>{ option.DisplayName }</option>
+			}
+		</select>
+		<input type="submit" name="action" value="Add" class="bg-blue-300 px-2 rounded-md"/>
+	</form>
+}

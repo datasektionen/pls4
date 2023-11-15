@@ -1,0 +1,61 @@
+package templates
+
+import (
+	"strconv"
+
+	"github.com/datasektionen/pls4/models"
+)
+
+templ Roles(roles []models.Role, mayCreate, mayDelete bool) {
+	<h2 class="text-2xl font-bold">Roles</h2>
+	<section class={ "grid grid-cols-" + ternary(mayDelete, "4", "3") + " gap-2 items-center p-4" }>
+		<p class="font-bold">Name</p>
+		<p class="font-bold">Members</p>
+		<p class="font-bold">Description</p>
+		if mayDelete {
+			<p class="font-bold">Options</p>
+		}
+		for _, role := range roles {
+			<hr class="col-span-full"/>
+			<a href={ templ.URL("/role/" + role.ID) }>{ role.DisplayName }</a>
+			<span>
+				if role.SubroleCount > 0 {
+					<p>{ strconv.Itoa(role.SubroleCount) } sub-role{ plural(role.SubroleCount) }</p>
+				}
+				if role.MemberCount > 0 {
+					<p>{ strconv.Itoa(role.MemberCount) } member{ plural(role.SubroleCount) }</p>
+				}
+			</span>
+			<span>{ role.Description }</span>
+			if mayDelete {
+				<form
+					class="text-red-800"
+					hx-post="/roles"
+					hx-target="main"
+					hx-swap="innerHTML"
+					hx-confirm="Are you sure?"
+				>
+					<input type="submit" name="action" value="Delete" class="cursor-pointer"/>
+					<input type="hidden" name="id" value={ role.ID }/>
+				</form>
+			}
+		}
+	</section>
+	if mayCreate {
+		<section class="p-4 pt-0" hx-target="this" hx-swap="outerHTML">
+			<button class="bg-slate-300 w-8 h-8" hx-get="/roles">+</button>
+		</section>
+	}
+}
+
+templ CreateRoleForm() {
+	<form hx-post="/roles" class="flex gap-2 flex-justify p-4 pt-0" hx-target="main" hx-swap="innerHTML">
+		<label for="id">ID:</label>
+		<input class="border-b border-black" type="text" id="id" name="id"/>
+		<label class="ml-auto" for="display-name">Display name:</label>
+		<input class="border-b border-black" type="text" id="display-name" name="display-name"/>
+		<label class="ml-auto" for="discription">Description:</label>
+		<input class="border-b border-black" type="text" id="description" name="description"/>
+		<input type="submit" name="action" value="Create" class="bg-blue-300 px-2 rounded-md"/>
+	</form>
+}

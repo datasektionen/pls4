@@ -1,0 +1,98 @@
+package templates
+
+import (
+	"github.com/datasektionen/pls4/models"
+	"github.com/google/uuid"
+	"time"
+)
+
+templ Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMemberID uuid.UUID, addNew bool) {
+	<section
+		class={ "grid grid-cols-[repeat(" + ternary(mayUpdate, "4", "3") + ",auto)] gap-2 items-center p-3" }
+		id="members"
+		hx-swap="outerHTML"
+		hx-target="this"
+	>
+		<p class="font-bold">Name</p>
+		<p class="font-bold">Date range</p>
+		<p class="font-bold">Comment</p>
+		if mayUpdate {
+			<p class="font-bold">Options</p>
+		}
+		for _, member := range members {
+			<hr class="col-span-full"/>
+			if member.MemberID == uuid.Nil {
+				<span>{ member.KTHID }</span>
+				<span></span>
+				<span></span>
+				if mayUpdate {
+					<span></span>
+				}
+			} else if (member.MemberID == toUpdateMemberID ) {
+				<span class="updating font-bold">{ member.KTHID }</span>
+				<span class="updating">
+					<input type="date" name="start-date" value={ member.StartDate.Format(time.DateOnly) }/> -
+					<input type="date" name="end-date" value={ member.EndDate.Format(time.DateOnly) }/>
+				</span>
+				<input class="updating" type="text" name="comment" value={ member.Comment }/>
+				<span>
+					<input
+						type="submit"
+						name="action"
+						value="Save"
+						class="updating cursor-pointer text-blue-700"
+						hx-post="/role/member"
+						hx-include=".updating"
+					/>
+				</span>
+				<input class="updating" type="hidden" name="member" value={ member.MemberID.String() }/>
+				<input class="updating" type="hidden" name="id" value={ roleID }/>
+			} else {
+				<span class="font-bold">{ member.KTHID }</span>
+				<span>{ member.StartDate.Format(time.DateOnly) } - { member.EndDate.Format(time.DateOnly) }</span>
+				<span>{ member.Comment }</span>
+				if mayUpdate {
+					<form hx-get="/role/member">
+						<input class="cursor-pointer text-green-800" type="submit" value="Edit"/>
+						<input
+							class="cursor-pointer text-red-800"
+							type="submit"
+							name="action"
+							value="Remove"
+							hx-post="/role/member"
+							hx-confirm="Are you sure? Prefer to set end date to yesterday"
+						/>
+						<input type="hidden" name="member" value={ member.MemberID.String() }/>
+						<input type="hidden" name="id" value={ roleID }/>
+					</form>
+				}
+			}
+		}
+		if addNew {
+			<hr class="col-span-full"/>
+			<input autofocus class="font-bold" type="text" name="kth-id"/>
+			<span>
+				<input type="date" name="start-date" value={ time.Now().Format(time.DateOnly) }/> -
+				<input type="date" name="end-date"/>
+			</span>
+			<input type="text" name="comment" value=""/>
+			<span>
+				<input
+					type="submit"
+					name="action"
+					value="Add"
+					class="cursor-pointer text-blue-700"
+					hx-post="/role/member"
+					hx-include="#members"
+				/>
+			</span>
+			<input type="hidden" name="id" value={ roleID }/>
+		}
+		if mayUpdate {
+			<form hx-get="/role/member?new">
+				<input class="bg-slate-300 w-8 h-8 cursor-pointer" type="submit" value="+"/>
+				<input type="hidden" name="id" value={ roleID }/>
+			</form>
+		}
+	</section>
+}
