@@ -1,0 +1,41 @@
+package templates
+
+import (
+	"github.com/datasektionen/pls4/models"
+)
+
+func options(permissions []models.SystemPermissions) bool {
+    for _, p := range permissions {
+        if p.MayEdit {
+            return true
+        }
+    }
+    return false
+}
+
+templ Permissions(permissions []models.SystemPermissions) {
+    <section
+        class="grid grid-cols-[auto_1fr{{ if $options }}_1fr{{ end }}] gap-x-6 gap-y-2 items-center p-3"
+        id="members"
+        hx-swap="outerHTML"
+        hx-target="this"
+    >
+        <p class="font-bold">System</p>
+        <p class="font-bold">Permission</p>
+        if options(permissions) {
+            <p class="font-bold">Options</p>
+        }
+        for _, permission := range permissions {
+            <hr class="col-span-full" />
+            for _, perm := range permission.Permissions {
+                <p>{permission.System}</p>
+                <p>{perm}</p>
+                if permission.MayEdit {
+                    <p class="text-red-800">Remove</p>
+                } else if options(permissions) {
+                    <p></p>
+                }
+            }
+        }
+    </section>
+}

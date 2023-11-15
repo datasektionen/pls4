@@ -12,6 +12,8 @@ import (
 	"github.com/google/uuid"
 )
 
+//go:generate templ generate
+
 type Template struct {
 	Code int
 	name string

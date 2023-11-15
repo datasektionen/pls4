@@ -1,0 +1,12 @@
+package templates
+
+import (
+    "strconv"
+)
+
+templ Error(statusCode int, statusText string, messages []string) {
+    <h1 class="text-2xl font-bold text-center">{strconv.Itoa(statusCode)} - {statusText}</h1>
+    for _, message := range messages {
+        <p class="text-red">{message}</p>
+    }
+}
