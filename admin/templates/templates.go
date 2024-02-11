@@ -2,12 +2,11 @@ package templates
 
 import (
 	"bytes"
-	"embed"
 	"html/template"
 	"io"
 	"net/http"
-	"time"
 
+	"github.com/a-h/templ"
 	"github.com/datasektionen/pls4/models"
 	"github.com/google/uuid"
 )
@@ -25,31 +24,8 @@ type Templates struct {
 	loginURL string
 }
 
-//go:embed *.html
-var templateFS embed.FS
-
 func New(loginURL string) (*Templates, error) {
-	funcs := map[string]any{
-		"date": func(date time.Time) string {
-			return date.Format(time.DateOnly)
-		},
-		"nilUUID": func() uuid.UUID {
-			return uuid.Nil
-		},
-		"now": func() time.Time {
-			return time.Now()
-		},
-	}
-
-	t, err := template.New("").Funcs(funcs).ParseFS(templateFS, "*.html")
-	if err != nil {
-		return nil, err
-	}
-
-	return &Templates{
-		t:        t,
-		loginURL: loginURL,
-	}, nil
+	panic("to remove")
 }
 
 func (s *Templates) RenderWithLayout(wr io.Writer, t Template, userID string) error {
@@ -69,13 +45,24 @@ func (s *Templates) Render(wr io.Writer, t Template) error {
 	return s.t.ExecuteTemplate(wr, t.name, t.data)
 }
 
-func (s *Templates) Error(code int, messages ...string) Template {
-	return Template{code, "error.html", map[string]any{
-		"StatusCode": code,
-		"StatusText": http.StatusText(code),
-		"Messages":   messages,
-	}}
+type ErrorComponent struct {
+	Code int
+	templ.Component
 }
+
+var _ templ.Component = ErrorComponent{}
+
+func Error(statusCode int, messages ...string) ErrorComponent {
+	return ErrorComponent{statusCode, errorComponent(statusCode, messages...)}
+}
+
+// func (s *Templates) Error(code int, messages ...string) Template {
+// 	return Template{code, "error.html", map[string]any{
+// 		"StatusCode": code,
+// 		"StatusText": http.StatusText(code),
+// 		"Messages":   messages,
+// 	}}
+// }
 
 func (s *Templates) Roles(roles []models.Role, mayCreate, mayDelete bool) Template {
 	return Template{http.StatusOK, "roles.html", map[string]any{

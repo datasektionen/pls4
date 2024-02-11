@@ -40,7 +40,7 @@ func Layout(userID, loginURL string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!doctype html><html lang=\"sv\"><head><meta charset=\"UTF-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>pls - fourth* time's the charm</title>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -48,7 +48,7 @@ func Layout(userID, loginURL string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script defer src=\"https://methone.datasektionen.se/bar.js\"></script><script src=\"https://cdn.tailwindcss.com\"></script><script src=\"https://unpkg.com/htmx.org@1.9.5\"></script><style>\n\t\t\t\t@import url(https://fonts.googleapis.com/css?family=Lato:400,300,700,400italic,700italic,900);\n\t\t\t\t@import url(https://use.fontawesome.com/releases/v6.4.2/css/all.css);\n\t\t\t\tbody {\n\t\t\t\t\tfont-family: Lato;\n\t\t\t\t}\n\t\t</style></head><body><div class=\"h-[50px]\" id=\"methone-container-replace\"></div><main class=\"p-4 max-w-screen-lg mx-auto md:mt-24\" hx-boost=\"true\" hx-target=\"this\">")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -56,7 +56,7 @@ func Layout(userID, loginURL string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</main></body></html>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

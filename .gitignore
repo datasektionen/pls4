@@ -10,3 +10,5 @@ go.work
 
 # air
 tmp/
+
+**/templates/*.txt

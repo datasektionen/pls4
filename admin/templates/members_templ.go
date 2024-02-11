@@ -34,7 +34,7 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<section class=\"")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -42,23 +42,23 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" id=\"members\" hx-swap=\"outerHTML\" hx-target=\"this\"><p class=\"font-bold\">Name</p><p class=\"font-bold\">Date range</p><p class=\"font-bold\">Comment</p>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if mayUpdate {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<p class=\"font-bold\">Options</p>")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 3)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		for _, member := range members {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<hr class=\"col-span-full\">")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 4)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if member.MemberID == uuid.Nil {
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span>")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 5)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -71,18 +71,18 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span> <span></span> <span></span> ")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 6)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if mayUpdate {
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span></span>")
+					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 7)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			} else if member.MemberID == toUpdateMemberID {
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"updating font-bold\">")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 8)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -95,7 +95,7 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span> <span class=\"updating\"><input type=\"date\" name=\"start-date\" value=\"")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 9)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -103,7 +103,7 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"> - <input type=\"date\" name=\"end-date\" value=\"")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 10)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -111,7 +111,7 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></span> <input class=\"updating\" type=\"text\" name=\"comment\" value=\"")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 11)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -119,7 +119,7 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"> <span><input type=\"submit\" name=\"action\" value=\"Save\" class=\"updating cursor-pointer text-blue-700\" hx-post=\"/role/member\" hx-include=\".updating\"></span> <input class=\"updating\" type=\"hidden\" name=\"member\" value=\"")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 12)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -127,7 +127,7 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"> <input class=\"updating\" type=\"hidden\" name=\"id\" value=\"")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 13)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -135,12 +135,12 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 14)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<span class=\"font-bold\">")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 15)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -153,7 +153,7 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span> <span>")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 16)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -166,7 +166,7 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" - ")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 17)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -179,7 +179,7 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span> <span>")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 18)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -192,12 +192,12 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span> ")
+				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 19)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if mayUpdate {
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form hx-get=\"/role/member\"><input class=\"cursor-pointer text-green-800\" type=\"submit\" value=\"Edit\"> <input class=\"cursor-pointer text-red-800\" type=\"submit\" name=\"action\" value=\"Remove\" hx-post=\"/role/member\" hx-confirm=\"Are you sure? Prefer to set end date to yesterday\"> <input type=\"hidden\" name=\"member\" value=\"")
+					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 20)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -205,7 +205,7 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"> <input type=\"hidden\" name=\"id\" value=\"")
+					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 21)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -213,7 +213,7 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></form>")
+					templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 22)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -221,7 +221,7 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 			}
 		}
 		if addNew {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<hr class=\"col-span-full\"><input autofocus class=\"font-bold\" type=\"text\" name=\"kth-id\"> <span><input type=\"date\" name=\"start-date\" value=\"")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 23)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -229,7 +229,7 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"> - <input type=\"date\" name=\"end-date\"></span> <input type=\"text\" name=\"comment\" value=\"\"> <span><input type=\"submit\" name=\"action\" value=\"Add\" class=\"cursor-pointer text-blue-700\" hx-post=\"/role/member\" hx-include=\"#members\"></span> <input type=\"hidden\" name=\"id\" value=\"")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 24)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -237,13 +237,13 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 25)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if mayUpdate {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form hx-get=\"/role/member?new\"><input class=\"bg-slate-300 w-8 h-8 cursor-pointer\" type=\"submit\" value=\"+\"> <input type=\"hidden\" name=\"id\" value=\"")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 26)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -251,12 +251,12 @@ func Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMem
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></form>")
+			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 27)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</section>")
+		templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 28)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

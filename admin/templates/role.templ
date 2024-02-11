@@ -3,16 +3,16 @@ package templates
 import "github.com/datasektionen/pls4/models"
 import "github.com/google/uuid"
 
-templ RoleName(role models.Role, mayUpdate bool) {
+templ RoleName(roleID string, displayName string, mayUpdate bool) {
 	<h1
 		class="text-3xl font-bold"
 		if mayUpdate {
-			hx-get={ "/role/name?id=" + role.ID }
+			hx-get={ "/role/name?id=" + roleID }
 			hx-swap="outerHTML"
 			hx-target="this"
 		}
 	>
-		{ role.DisplayName }
+		{ displayName }
 		if mayUpdate {
 			<i class="fa-regular fa-pen-to-square"></i>
 		}
@@ -31,16 +31,16 @@ templ RoleEditName(role models.Role) {
 	</form>
 }
 
-templ RoleDescription(role models.Role, mayUpdate bool) {
+templ RoleDescription(roleID string, description string, mayUpdate bool) {
 	<p
 		class="p-2"
 		if mayUpdate {
-			hx-get="/role/description?id={{ .ID }}"
+			hx-get={ "/role/description?id=" + roleID }
 			hx-swap="outerHTML"
 			hx-target="this"
 		}
 	>
-		{ role.Description }
+		{ description }
 		if mayUpdate {
 			<i class="fa-regular fa-pen-to-square"></i>
 		}
@@ -59,8 +59,7 @@ templ RoleEditDescription(role models.Role) {
 }
 
 templ Role(role models.Role, subroles []models.Role, members []models.Member, permissions []models.SystemPermissions, mayUpdate bool) {
-	@RoleName(role, mayUpdate)
-
+	@RoleName(role.ID, role.DisplayName, mayUpdate)
 	<h2 class="text-xl">Sub-roles</h2>
 	@Subroles(role.ID, subroles, mayUpdate)
 	<h2 class="text-xl">Members</h2>

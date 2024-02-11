@@ -7,7 +7,7 @@ import (
 
 templ Subroles(roleID string, subroles []models.Role, mayUpdate bool) {
 	<section id="subroles">
-		<section class="grid grid-cols-{{ if .MayUpdate }}3{{ else }}2{{ end }} gap-2 items-center p-4">
+		<section class={ "grid grid-cols-" + ternary(mayUpdate, "3", "2") + " gap-2 items-center p-4" }>
 			<p class="font-bold">Name</p>
 			<p class="font-bold">Members</p>
 			if mayUpdate {
@@ -15,26 +15,24 @@ templ Subroles(roleID string, subroles []models.Role, mayUpdate bool) {
 			}
 			for _, subrole := range subroles {
 				<hr class="col-span-full"/>
-				<a href="/role/{{ .ID }}">{subrole.DisplayName}</a>
+				<a href={ templ.URL("/role/" + subrole.ID) }>{ subrole.DisplayName }</a>
 				<span>
 					if subrole.SubroleCount > 0 {
-						<p>{strconv.Itoa(subrole.SubroleCount)} sub-role{plural(subrole.SubroleCount)}</p>
+						<p>{ strconv.Itoa(subrole.SubroleCount) } sub-role{ plural(subrole.SubroleCount) }</p>
 					}
-
 					if subrole.MemberCount > 0 {
-						<p>{strconv.Itoa(subrole.MemberCount)} member{plural(subrole.MemberCount)}</p>
+						<p>{ strconv.Itoa(subrole.MemberCount) } member{ plural(subrole.MemberCount) }</p>
 					}
 				</span>
 				if mayUpdate {
 					<form class="text-red-800" hx-post="/role/subrole" hx-target="#subroles">
-						<input type="submit" name="action" value="Remove" class="cursor-pointer" />
-						<input type="hidden" name="id" value="{{ $role.ID }}" />
-						<input type="hidden" name="subrole" value="{{ .ID }}" />
+						<input type="submit" name="action" value="Remove" class="cursor-pointer"/>
+						<input type="hidden" name="id" value={ roleID }/>
+						<input type="hidden" name="subrole" value={ subrole.ID }/>
 					</form>
 				}
 			}
 		</section>
-
 		if mayUpdate {
 			@AddSubroleButton(roleID)
 		}
@@ -49,12 +47,12 @@ templ AddSubroleButton(roleID string) {
 
 templ AddSubroleForm(roleID string, options []models.Role) {
 	<form hx-post="/role/subrole" class="flex gap-2 p-4 pt-0" hx-target="#subroles">
-		<input type="hidden" name="id" value={ roleID } />
+		<input type="hidden" name="id" value={ roleID }/>
 		<select name="subrole" class="p-2">
 			for _, option := range options {
-				<option value={ option.ID }>{option.DisplayName}</option>
+				<option value={ option.ID }>{ option.DisplayName }</option>
 			}
 		</select>
-		<input type="submit" name="action" value="Add" class="bg-blue-300 px-2 rounded-md" />
+		<input type="submit" name="action" value="Add" class="bg-blue-300 px-2 rounded-md"/>
 	</form>
 }

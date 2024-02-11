@@ -24,12 +24,6 @@ func New(db *sql.DB, api *api.API, loginURL, loginAPIKey, hodisURL string) (*Adm
 	s.loginAPIKey = loginAPIKey
 	s.hodisURL = hodisURL
 
-	if t, err := templates.New(loginURL); err != nil {
-		return nil, err
-	} else {
-		s.t = t
-	}
-
 	s.db = db
 
 	go s.deleteOldSessionsForever()
