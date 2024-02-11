@@ -3,14 +3,12 @@ package admin
 import (
 	"database/sql"
 
-	"github.com/datasektionen/pls4/admin/templates"
 	"github.com/datasektionen/pls4/api"
 )
 
 type Admin struct {
 	db          *sql.DB
 	api         *api.API
-	t           *templates.Templates
 	loginURL    string
 	loginAPIKey string
 	hodisURL    string
