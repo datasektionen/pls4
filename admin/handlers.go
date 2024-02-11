@@ -252,10 +252,10 @@ func (s *Admin) UpdateMember(
 	res, err := s.db.ExecContext(ctx, `
 		update roles_users
 		set
-			start_date = $3,
-			end_date = $4,
+			start_date = case when $3 then $4 else start_date end,
+			end_date = case when $5 then $6 else end_date end
 		where id = $1 and role_id = $2
-	`, memberID, roleID, startDate, endDate)
+	`, memberID, roleID, startDate != time.Time{}, startDate, endDate != time.Time{}, endDate)
 	if err != nil {
 		return err
 	}

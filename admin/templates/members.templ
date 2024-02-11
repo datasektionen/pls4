@@ -48,8 +48,8 @@ templ Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMe
 				<span class="font-bold">{ member.KTHID }</span>
 				<span>{ member.StartDate.Format(time.DateOnly) } - { member.EndDate.Format(time.DateOnly) }</span>
 				if mayUpdate {
-					<form hx-get="/role/member">
-						<input class="cursor-pointer text-green-800" type="submit" value="Edit"/>
+					<div hx-include="this">
+						<input class="cursor-pointer text-green-800" hx-get="/role/member" type="submit" name="action" value="Edit"/>
 						<input
 							class="cursor-pointer text-red-800"
 							type="submit"
@@ -58,9 +58,17 @@ templ Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMe
 							hx-post="/role/member"
 							hx-confirm="Are you sure? Prefer to set end date to yesterday"
 						/>
+						<input
+							class="cursor-pointer text-amber-800"
+							type="submit"
+							hx-post="/role/member"
+							name="action"
+							value="End"
+							title="Set role membership end date to yesterday"
+						/>
 						<input type="hidden" name="member" value={ member.MemberID.String() }/>
 						<input type="hidden" name="id" value={ roleID }/>
-					</form>
+					</div>
 				}
 			}
 		}

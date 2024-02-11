@@ -321,7 +321,7 @@ func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) templ.Comp
 
 	if action == "Remove" {
 		if err := admin.RemoveMember(ctx, session.KTHID, id, member); err != nil {
-			slog.Error("Could not edit member", "error", err, "member", member)
+			slog.Error("Could not remove member", "error", err, "member", member)
 			return t.Error(http.StatusInternalServerError)
 		}
 	}
@@ -346,6 +346,14 @@ func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) templ.Comp
 			slog.Error("Could not add member", "error", err, "role_id", id, "kth_id", kthID)
 			return t.Error(http.StatusInternalServerError)
 		}
+	} else if action == "End" {
+		if err := admin.UpdateMember(ctx, session.KTHID, id, member, time.Time{}, time.Now().AddDate(0, 0, -1)); err != nil {
+			slog.Error("Could not edit member", "error", err, "role_id", id, "kth_id", kthID)
+			return t.Error(http.StatusInternalServerError)
+		}
+	} else {
+		slog.Error("Unknown action", "action", action)
+		return t.Error(http.StatusBadRequest, "Unknown action '" + action + "'")
 	}
 
 	members, err := admin.GetRoleMembers(ctx, id, true, true)

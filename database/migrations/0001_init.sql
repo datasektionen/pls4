@@ -11,8 +11,8 @@ create table roles_users (
 
     modified_by text      not null,
     modified_at timestamp not null default now(),
-    start_date  timestamp not null default now(),
-    end_date    timestamp not null,
+    start_date  date      not null default now(),
+    end_date    date      not null,
 
     foreign key (role_id) references roles (id)
 );
