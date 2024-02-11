@@ -13,7 +13,7 @@ import "bytes"
 import "github.com/datasektionen/pls4/models"
 import "github.com/google/uuid"
 
-func RoleName(roleID string, displayName string, mayUpdate bool) templ.Component {
+func RoleNameDisplay(roleID string, displayName string, mayUpdate bool) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -78,7 +78,7 @@ func RoleName(roleID string, displayName string, mayUpdate bool) templ.Component
 	})
 }
 
-func RoleEditName(role models.Role) templ.Component {
+func RoleNameForm(role models.Role) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -118,7 +118,7 @@ func RoleEditName(role models.Role) templ.Component {
 	})
 }
 
-func RoleDescription(roleID string, description string, mayUpdate bool) templ.Component {
+func RoleDescriptionDisplay(roleID string, description string, mayUpdate bool) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -183,7 +183,7 @@ func RoleDescription(roleID string, description string, mayUpdate bool) templ.Co
 	})
 }
 
-func RoleEditDescription(role models.Role) templ.Component {
+func RoleDescriptionForm(role models.Role) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -241,7 +241,11 @@ func Role(role models.Role, subroles []models.Role, members []models.Member, per
 			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = RoleName(role.ID, role.DisplayName, mayUpdate).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = RoleNameDisplay(role.ID, role.DisplayName, mayUpdate).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = RoleDescriptionDisplay(role.ID, role.Description, mayUpdate).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

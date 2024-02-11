@@ -3,7 +3,7 @@ package templates
 import "github.com/datasektionen/pls4/models"
 import "github.com/google/uuid"
 
-templ RoleName(roleID string, displayName string, mayUpdate bool) {
+templ RoleNameDisplay(roleID string, displayName string, mayUpdate bool) {
 	<h1
 		class="text-3xl font-bold"
 		if mayUpdate {
@@ -19,7 +19,7 @@ templ RoleName(roleID string, displayName string, mayUpdate bool) {
 	</h1>
 }
 
-templ RoleEditName(role models.Role) {
+templ RoleNameForm(role models.Role) {
 	<form
 		class="text-3xl"
 		hx-post={ "/role/name?id=" + role.ID }
@@ -31,7 +31,7 @@ templ RoleEditName(role models.Role) {
 	</form>
 }
 
-templ RoleDescription(roleID string, description string, mayUpdate bool) {
+templ RoleDescriptionDisplay(roleID string, description string, mayUpdate bool) {
 	<p
 		class="p-2"
 		if mayUpdate {
@@ -47,7 +47,7 @@ templ RoleDescription(roleID string, description string, mayUpdate bool) {
 	</p>
 }
 
-templ RoleEditDescription(role models.Role) {
+templ RoleDescriptionForm(role models.Role) {
 	<form
 		hx-post={ "/role/description?id=" + role.ID }
 		hx-swap="outerHTML"
@@ -59,7 +59,8 @@ templ RoleEditDescription(role models.Role) {
 }
 
 templ Role(role models.Role, subroles []models.Role, members []models.Member, permissions []models.SystemPermissions, mayUpdate bool) {
-	@RoleName(role.ID, role.DisplayName, mayUpdate)
+	@RoleNameDisplay(role.ID, role.DisplayName, mayUpdate)
+	@RoleDescriptionDisplay(role.ID, role.Description, mayUpdate)
 	<h2 class="text-xl">Sub-roles</h2>
 	@Subroles(role.ID, subroles, mayUpdate)
 	<h2 class="text-xl">Members</h2>
