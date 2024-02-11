@@ -13,7 +13,7 @@ func options(permissions []models.SystemPermissions) bool {
 	return false
 }
 
-templ Permissions(permissions []models.SystemPermissions) {
+templ Permissions(roleID string, permissions []models.SystemPermissions) {
 	<section
 		class={ "grid grid-cols-[auto_1fr" + ternary(options(permissions), "_1fr", "") + "] gap-x-6 gap-y-2 items-center p-3" }
 		id="members"
@@ -31,7 +31,12 @@ templ Permissions(permissions []models.SystemPermissions) {
 				<p>{ permission.System }</p>
 				<p>{ perm }</p>
 				if permission.MayEdit {
-					<p class="text-red-800">Remove</p>
+					<p>
+						<button
+							hx-delete={ "/role/" + roleID + "/permission/" + permission.System + ":" + perm }
+							class="text-red-800"
+						>Remove</button>
+					</p>
 				} else if options(permissions) {
 					<p></p>
 				}

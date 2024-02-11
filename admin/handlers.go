@@ -385,3 +385,24 @@ func (s *Admin) DeleteRole(
 	}
 	return tx.Commit()
 }
+
+func (s *Admin) RemovePermission(
+	ctx context.Context,
+	kthID, roleID string,
+	system, permission string,
+) error {
+	if ok, err := s.MayUpdatePermissions(ctx, kthID, system); err != nil {
+		return err
+	} else if !ok {
+		// TODO: return an error
+		return nil
+	}
+
+	_, err := s.db.ExecContext(ctx, `
+		delete from roles_permissions
+		where role_id = $1
+		and system = $2
+		and permission = $3
+	`, roleID, system, permission)
+	return err
+}

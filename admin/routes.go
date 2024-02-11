@@ -3,6 +3,7 @@ package admin
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/a-h/templ"
@@ -23,6 +24,7 @@ func Mount(admin *Admin) {
 	http.Handle("GET /role/subrole", partial(admin, roleSubroleForm))
 	http.Handle("POST /role/member", partial(admin, roleMember))
 	http.Handle("GET /role/member", partial(admin, getRoleMembers))
+	http.Handle("DELETE /role/{id}/permission/{sysperm}", partial(admin, roleRemovePermission))
 
 	http.Handle("/login", route(admin, login))
 	http.Handle("/logout", route(admin, logout))
@@ -379,6 +381,34 @@ func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) templ.Comp
 	}
 
 	return t.Members(id, members, mayUpdate, uuid.Nil, false)
+}
+
+func roleRemovePermission(admin *Admin, w http.ResponseWriter, r *http.Request) templ.Component {
+	session, err := admin.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+	ctx := r.Context()
+	id := r.PathValue("id")
+	sysperm := strings.SplitN(r.PathValue("sysperm"), ":", 2)
+	if len(sysperm) != 2 {
+		return t.Error(http.StatusBadRequest, "Invalid system:permission")
+	}
+	system, permission := sysperm[0], sysperm[1]
+
+	if err := admin.RemovePermission(ctx, session.KTHID, id, system, permission); err != nil {
+		slog.Error("Could remove permission from role", "error", err, "role_id", id, "system", system, "permission", permission)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	permissions, err := admin.GetRolePermissions(ctx, id, session.KTHID)
+	if err != nil {
+		slog.Error("Could not get role permissions", "error", err, "role_id", id)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	return t.Permissions(id, permissions)
 }
 
 func login(admin *Admin, w http.ResponseWriter, r *http.Request) {
