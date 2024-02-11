@@ -13,7 +13,7 @@ func plural(count int) string {
 	return "s"
 }
 
-func tenary[T any](condition bool, then T, elze T) T {
+func ternary[T any](condition bool, then T, elze T) T {
 	if condition {
 		return then
 	} else {
@@ -23,7 +23,7 @@ func tenary[T any](condition bool, then T, elze T) T {
 
 templ Roles(roles []models.Role, mayCreate, mayDelete bool) {
 	<h2 class="text-2xl font-bold">Roles</h2>
-	<section class={ "grid grid-cols-" + tenary(mayDelete, "4", "3") + " gap-2 items-center p-4" }>
+	<section class={ "grid grid-cols-" + ternary(mayDelete, "4", "3") + " gap-2 items-center p-4" }>
 		<p class="font-bold">Name</p>
 		<p class="font-bold">Members</p>
 		<p class="font-bold">Description</p>

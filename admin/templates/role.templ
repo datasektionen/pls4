@@ -1,6 +1,7 @@
 package templates
 
 import "github.com/datasektionen/pls4/models"
+import "github.com/google/uuid"
 
 templ RoleName(role models.Role, mayUpdate bool) {
 	<h1
@@ -61,9 +62,9 @@ templ Role(role models.Role, subroles []models.Role, members []models.Member, pe
 	@RoleName(role, mayUpdate)
 
 	<h2 class="text-xl">Sub-roles</h2>
-	// subroles
+	@Subroles(role.ID, subroles, mayUpdate)
 	<h2 class="text-xl">Members</h2>
-	// members
+	@Members(role.ID, members, mayUpdate, uuid.Nil, false)
 	<h2 class="text-xl">Permissions</h2>
 	@Permissions(permissions)
 }

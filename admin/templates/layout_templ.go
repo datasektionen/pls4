@@ -12,18 +12,18 @@ import "bytes"
 
 func methone(userID, loginURL string) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_methone_381d`,
-		Function: `function __templ_methone_381d(userID, loginURL){window.methone_conf = {
-        system_name: "pls",
-        color_scheme: "purple",
-        login_text: userID ? userID : "Login",
-        login_href: userID ? "/logout" : loginURL
-            + "/login?callback="
-            + encodeURIComponent(window.location.origin + "/login?code="),
-    };
+		Name: `__templ_methone_003b`,
+		Function: `function __templ_methone_003b(userID, loginURL){window.methone_conf = {
+		system_name: "pls",
+		color_scheme: "purple",
+		login_text: userID ? userID : "Login",
+		login_href: userID ? "/logout" : loginURL
+			+ "/login?callback="
+			+ encodeURIComponent(window.location.origin + "/login?code="),
+	};
 }`,
-		Call:       templ.SafeScript(`__templ_methone_381d`, userID, loginURL),
-		CallInline: templ.SafeScriptInline(`__templ_methone_381d`, userID, loginURL),
+		Call:       templ.SafeScript(`__templ_methone_003b`, userID, loginURL),
+		CallInline: templ.SafeScriptInline(`__templ_methone_003b`, userID, loginURL),
 	}
 }
 
@@ -48,7 +48,7 @@ func Layout(userID, loginURL string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script defer src=\"https://methone.datasektionen.se/bar.js\"></script><script src=\"https://cdn.tailwindcss.com\"></script><script src=\"https://unpkg.com/htmx.org@1.9.5\"></script><style>\n            @import url(https://fonts.googleapis.com/css?family=Lato:400,300,700,400italic,700italic,900);\n            @import url(https://use.fontawesome.com/releases/v6.4.2/css/all.css);\n            body {\n                font-family: Lato;\n            }\n        </style></head><body><div class=\"h-[50px]\" id=\"methone-container-replace\"></div><main class=\"p-4 max-w-screen-lg mx-auto md:mt-24\" hx-boost=\"true\" hx-target=\"this\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script defer src=\"https://methone.datasektionen.se/bar.js\"></script><script src=\"https://cdn.tailwindcss.com\"></script><script src=\"https://unpkg.com/htmx.org@1.9.5\"></script><style>\n\t\t\t\t@import url(https://fonts.googleapis.com/css?family=Lato:400,300,700,400italic,700italic,900);\n\t\t\t\t@import url(https://use.fontawesome.com/releases/v6.4.2/css/all.css);\n\t\t\t\tbody {\n\t\t\t\t\tfont-family: Lato;\n\t\t\t\t}\n\t\t</style></head><body><div class=\"h-[50px]\" id=\"methone-container-replace\"></div><main class=\"p-4 max-w-screen-lg mx-auto md:mt-24\" hx-boost=\"true\" hx-target=\"this\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
