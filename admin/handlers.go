@@ -19,7 +19,9 @@ func (s *Admin) ListRoles(ctx context.Context) ([]models.Role, error) {
 		from roles r
 		left join roles_roles rr on rr.superrole_id = r.id
 		left join roles_users ru on ru.role_id = r.id
+		where (ru.id is null or now() between ru.start_date and ru.end_date)
 		group by r.id
+		order by r.display_name
 	`)
 	if err != nil {
 		return nil, err
