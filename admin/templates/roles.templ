@@ -31,7 +31,6 @@ templ Roles(roles []models.Role, mayCreate, mayDelete bool) {
 				<form
 					class="text-red-800"
 					hx-post="/roles"
-					hx-target="main"
 					hx-swap="innerHTML"
 					hx-confirm="Are you sure?"
 				>
@@ -42,7 +41,7 @@ templ Roles(roles []models.Role, mayCreate, mayDelete bool) {
 		}
 	</section>
 	if mayCreate {
-		<section class="p-4 pt-0" hx-target="this" hx-swap="outerHTML">
+		<section class="p-4 pt-0" hx-swap="outerHTML">
 			<button class="bg-slate-300 w-8 h-8" hx-get="/roles">+</button>
 		</section>
 	}

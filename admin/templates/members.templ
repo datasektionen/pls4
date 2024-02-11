@@ -11,7 +11,6 @@ templ Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMe
 		class={ "grid grid-cols-[repeat(" + ternary(mayUpdate, "3", "2") + ",auto)] gap-2 items-center p-3" }
 		id="members"
 		hx-swap="outerHTML"
-		hx-target="this"
 	>
 		<p class="font-bold">Name</p>
 		<p class="font-bold">Date range</p>

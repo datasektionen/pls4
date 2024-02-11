@@ -40,7 +40,7 @@ templ Subroles(roleID string, subroles []models.Role, mayUpdate bool) {
 }
 
 templ AddSubroleButton(roleID string) {
-	<section class="p-4 pt-0" hx-target="this" hx-swap="outerHTML">
+	<section class="p-4 pt-0" hx-swap="outerHTML">
 		<button class="bg-slate-300 w-8 h-8" hx-get={ "/role/subrole?id=" + roleID }>+</button>
 	</section>
 }

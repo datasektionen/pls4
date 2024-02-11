@@ -9,7 +9,6 @@ templ RoleNameDisplay(roleID string, displayName string, mayUpdate bool) {
 		if mayUpdate {
 			hx-get={ "/role/name?id=" + roleID }
 			hx-swap="outerHTML"
-			hx-target="this"
 		}
 	>
 		{ displayName }
@@ -24,7 +23,6 @@ templ RoleNameForm(role models.Role) {
 		class="text-3xl"
 		hx-post={ "/role/name?id=" + role.ID }
 		hx-swap="outerHTML"
-		hx-target="this"
 	>
 		<input name="display-name" type="text" value={ role.DisplayName }/>
 		<input class="bg-blue-300 p-2 rounded-sm" type="submit" value="Save"/>
@@ -37,7 +35,6 @@ templ RoleDescriptionDisplay(roleID string, description string, mayUpdate bool) 
 		if mayUpdate {
 			hx-get={ "/role/description?id=" + roleID }
 			hx-swap="outerHTML"
-			hx-target="this"
 		}
 	>
 		{ description }
@@ -51,7 +48,6 @@ templ RoleDescriptionForm(role models.Role) {
 	<form
 		hx-post={ "/role/description?id=" + role.ID }
 		hx-swap="outerHTML"
-		hx-target="this"
 	>
 		<textarea required class="p-2 w-96" name="description">{ role.Description }</textarea>
 		<input class="block bg-blue-300 p-1 rounded-sm" type="submit" value="Save"/>

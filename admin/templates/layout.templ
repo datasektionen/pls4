@@ -29,13 +29,19 @@ templ Layout(userID, loginURL string) {
 				body {
 					font-family: Lato;
 				}
-		</style>
-		</head>
-		<body>
-			<div class="h-[50px]" id="methone-container-replace"></div>
-			<main class="p-4 max-w-screen-lg mx-auto md:mt-24" hx-boost="true" hx-target="this">
+			</style>
+			@Body() {
 				{ children... }
-			</main>
-		</body>
+			}
+		</head>
 	</html>
+}
+
+templ Body() {
+	<body hx-boost="true">
+		<div class="h-[50px]" id="methone-container-replace" hx-disable hx-preserve="true"></div>
+		<main class="p-4 max-w-screen-lg mx-auto md:mt-24">
+			{ children... }
+		</main>
+	</body>
 }

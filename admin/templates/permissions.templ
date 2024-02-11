@@ -18,7 +18,6 @@ templ Permissions(roleID string, permissions []models.SystemPermissions) {
 		class={ "grid grid-cols-[auto_1fr" + ternary(options(permissions), "_1fr", "") + "] gap-x-6 gap-y-2 items-center p-3" }
 		id="members"
 		hx-swap="outerHTML"
-		hx-target="this"
 	>
 		<p class="font-bold">System</p>
 		<p class="font-bold">Permission</p>

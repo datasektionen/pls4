@@ -38,19 +38,17 @@ func route(admin *Admin, handler func(s *Admin, w http.ResponseWriter, r *http.R
 
 func page(admin *Admin, handler func(s *Admin, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c := handler(admin, w, r)
+		component := handler(admin, w, r)
 		var err error
-		if r.Header.Get("HX-Boosted") == "true" {
-			err = c.Render(r.Context(), w)
-		} else {
-			if e, ok := c.(t.ErrorComponent); ok {
-				w.WriteHeader(e.Code)
-			}
-			session, _ := admin.GetSession(r)
-			if err == nil {
-				err = t.Layout(session.DisplayName, admin.loginURL).Render(templ.WithChildren(r.Context(), c), w)
-			}
+		if e, ok := component.(t.ErrorComponent); ok {
+			w.WriteHeader(e.Code)
 		}
+		layout := t.Body()
+		if r.Header.Get("HX-Boosted") != "true" {
+			session, _ := admin.GetSession(r)
+			layout = t.Layout(session.DisplayName, admin.loginURL)
+		}
+		err = layout.Render(templ.WithChildren(r.Context(), component), w)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			slog.Error("Could not render template", "error", err)
