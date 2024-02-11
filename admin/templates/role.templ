@@ -1,0 +1,69 @@
+package templates
+
+import "github.com/datasektionen/pls4/models"
+
+templ RoleName(role models.Role, mayUpdate bool) {
+	<h1
+		class="text-3xl font-bold"
+		if mayUpdate {
+			hx-get={ "/role/name?id=" + role.ID }
+			hx-swap="outerHTML"
+			hx-target="this"
+		}
+	>
+		{ role.DisplayName }
+		if mayUpdate {
+			<i class="fa-regular fa-pen-to-square"></i>
+		}
+	</h1>
+}
+
+templ RoleEditName(role models.Role) {
+	<form
+		class="text-3xl"
+		hx-post={ "/role/name?id=" + role.ID }
+		hx-swap="outerHTML"
+		hx-target="this"
+	>
+		<input name="display-name" type="text" value={ role.DisplayName }/>
+		<input class="bg-blue-300 p-2 rounded-sm" type="submit" value="Save"/>
+	</form>
+}
+
+templ RoleDescription(role models.Role, mayUpdate bool) {
+	<p
+		class="p-2"
+		if mayUpdate {
+			hx-get="/role/description?id={{ .ID }}"
+			hx-swap="outerHTML"
+			hx-target="this"
+		}
+	>
+		{ role.Description }
+		if mayUpdate {
+			<i class="fa-regular fa-pen-to-square"></i>
+		}
+	</p>
+}
+
+templ RoleEditDescription(role models.Role) {
+	<form
+		hx-post={ "/role/description?id=" + role.ID }
+		hx-swap="outerHTML"
+		hx-target="this"
+	>
+		<textarea required class="p-2 w-96" name="description">{ role.Description }</textarea>
+		<input class="block bg-blue-300 p-1 rounded-sm" type="submit" value="Save"/>
+	</form>
+}
+
+templ Role(role models.Role, subroles []models.Role, members []models.Member, permissions []models.SystemPermissions, mayUpdate bool) {
+	@RoleName(role, mayUpdate)
+
+	<h2 class="text-xl">Sub-roles</h2>
+	// subroles
+	<h2 class="text-xl">Members</h2>
+	// members
+	<h2 class="text-xl">Permissions</h2>
+	@Permissions(permissions)
+}
