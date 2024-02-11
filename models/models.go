@@ -17,7 +17,6 @@ type Role struct {
 type Member struct {
 	MemberID   uuid.UUID
 	KTHID      string
-	Comment    string
 	ModifiedBy string
 	ModifiedAt time.Time
 	StartDate  time.Time

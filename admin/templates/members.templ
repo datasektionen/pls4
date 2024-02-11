@@ -8,14 +8,13 @@ import (
 
 templ Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMemberID uuid.UUID, addNew bool) {
 	<section
-		class={ "grid grid-cols-[repeat(" + ternary(mayUpdate, "4", "3") + ",auto)] gap-2 items-center p-3" }
+		class={ "grid grid-cols-[repeat(" + ternary(mayUpdate, "3", "2") + ",auto)] gap-2 items-center p-3" }
 		id="members"
 		hx-swap="outerHTML"
 		hx-target="this"
 	>
 		<p class="font-bold">Name</p>
 		<p class="font-bold">Date range</p>
-		<p class="font-bold">Comment</p>
 		if mayUpdate {
 			<p class="font-bold">Options</p>
 		}
@@ -23,7 +22,6 @@ templ Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMe
 			<hr class="col-span-full"/>
 			if member.MemberID == uuid.Nil {
 				<span>{ member.KTHID }</span>
-				<span></span>
 				<span></span>
 				if mayUpdate {
 					<span></span>
@@ -34,7 +32,6 @@ templ Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMe
 					<input type="date" name="start-date" value={ member.StartDate.Format(time.DateOnly) }/> -
 					<input type="date" name="end-date" value={ member.EndDate.Format(time.DateOnly) }/>
 				</span>
-				<input class="updating" type="text" name="comment" value={ member.Comment }/>
 				<span>
 					<input
 						type="submit"
@@ -50,7 +47,6 @@ templ Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMe
 			} else {
 				<span class="font-bold">{ member.KTHID }</span>
 				<span>{ member.StartDate.Format(time.DateOnly) } - { member.EndDate.Format(time.DateOnly) }</span>
-				<span>{ member.Comment }</span>
 				if mayUpdate {
 					<form hx-get="/role/member">
 						<input class="cursor-pointer text-green-800" type="submit" value="Edit"/>
@@ -75,7 +71,6 @@ templ Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMe
 				<input type="date" name="start-date" value={ time.Now().Format(time.DateOnly) }/> -
 				<input type="date" name="end-date"/>
 			</span>
-			<input type="text" name="comment" value=""/>
 			<span>
 				<input
 					type="submit"

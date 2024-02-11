@@ -9,7 +9,6 @@ create table roles_users (
     role_id  text not null,
     kth_id   text not null,
 
-    comment     text      not null,
     modified_by text      not null,
     modified_at timestamp not null default now(),
     start_date  timestamp not null default now(),

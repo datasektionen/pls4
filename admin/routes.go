@@ -335,15 +335,14 @@ func roleMember(admin *Admin, w http.ResponseWriter, r *http.Request) templ.Comp
 	if err != nil && r.Form.Has("end-date") {
 		return t.Error(http.StatusBadRequest)
 	}
-	comment := r.FormValue("comment")
 
 	if action == "Save" {
-		if err := admin.UpdateMember(ctx, session.KTHID, id, member, startDate, endDate, comment); err != nil {
+		if err := admin.UpdateMember(ctx, session.KTHID, id, member, startDate, endDate); err != nil {
 			slog.Error("Could not edit member", "error", err, "member", member)
 			return t.Error(http.StatusInternalServerError)
 		}
 	} else if action == "Add" {
-		if err := admin.AddMember(ctx, session.KTHID, id, kthID, comment, startDate, endDate); err != nil {
+		if err := admin.AddMember(ctx, session.KTHID, id, kthID, startDate, endDate); err != nil {
 			slog.Error("Could not add member", "error", err, "role_id", id, "kth_id", kthID)
 			return t.Error(http.StatusInternalServerError)
 		}

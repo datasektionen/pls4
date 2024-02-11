@@ -90,7 +90,7 @@ func (s *Admin) GetSubroles(ctx context.Context, id string) ([]models.Role, erro
 
 func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool, includeIndirect bool) ([]models.Member, error) {
 	query := `select
-		id, kth_id, comment, modified_by,
+		id, kth_id, modified_by,
 		modified_at, start_date, end_date
 	from roles_users
 	where role_id = $1
@@ -107,7 +107,7 @@ func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool,
 				on superrole_id = role_id
 		) (` + query + `) union all
 		(select
-			null as id, kth_id, '' as comment, '' as modified_by,
+			null as id, kth_id, '' as modified_by,
 			max(modified_at), min(start_date), max(end_date)
 		from all_subroles
 		inner join roles_users using (role_id)
@@ -124,7 +124,7 @@ func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool,
 	for rows.Next() {
 		var m models.Member
 		if err := rows.Scan(
-			&m.MemberID, &m.KTHID, &m.Comment, &m.ModifiedBy,
+			&m.MemberID, &m.KTHID, &m.ModifiedBy,
 			&m.ModifiedAt, &m.StartDate, &m.EndDate,
 		); err != nil {
 			return nil, err
@@ -242,7 +242,6 @@ func (s *Admin) UpdateMember(
 	memberID uuid.UUID,
 	startDate time.Time,
 	endDate time.Time,
-	comment string,
 ) error {
 	if ok, err := s.MayUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
@@ -255,9 +254,8 @@ func (s *Admin) UpdateMember(
 		set
 			start_date = $3,
 			end_date = $4,
-			comment = $5
 		where id = $1 and role_id = $2
-	`, memberID, roleID, startDate, endDate, comment)
+	`, memberID, roleID, startDate, endDate)
 	if err != nil {
 		return err
 	}
@@ -273,7 +271,7 @@ func (s *Admin) UpdateMember(
 
 func (s *Admin) AddMember(
 	ctx context.Context,
-	kthID, roleID, memberKTHID, comment string,
+	kthID, roleID, memberKTHID string,
 	startDate time.Time,
 	endDate time.Time,
 ) error {
@@ -284,9 +282,9 @@ func (s *Admin) AddMember(
 		return nil
 	}
 	res, err := s.db.ExecContext(ctx, `
-		insert into roles_users (role_id, kth_id, comment, modified_by, start_date, end_date)
-		values ($1, $2, $3, $4, $5, $6)
-	`, roleID, memberKTHID, comment, kthID, startDate, endDate)
+		insert into roles_users (role_id, kth_id, modified_by, start_date, end_date)
+		values ($1, $2, $3, $4, $5)
+	`, roleID, memberKTHID, kthID, startDate, endDate)
 	if err != nil {
 		return err
 	}
