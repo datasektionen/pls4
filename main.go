@@ -33,10 +33,6 @@ func main() {
 		os.Getenv("LOGIN_API_KEY"),
 		"API token for login. Funnily enough this service verifies the token",
 	)
-	flag.StringVar(&hodisURL, "hodis-url",
-		os.Getenv("HODIS_URL"),
-		"API token for login. Funnily enough this service verifies the token",
-	)
 	flag.StringVar(&databaseURL, "database-url",
 		os.Getenv("DATABASE_URL"),
 		"URL to the postgresql database to use",
