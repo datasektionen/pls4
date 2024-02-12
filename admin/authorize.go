@@ -37,3 +37,19 @@ func (s *Admin) MayDeleteRoles(ctx context.Context, kthID string, roleIDs []stri
 func (s *Admin) MayUpdatePermissions(ctx context.Context, kthID, system string) (bool, error) {
 	return s.api.CheckUser(ctx, kthID, "pls", "system-"+system)
 }
+
+func (s *Admin) MayUpdatePermissionsInSystems(ctx context.Context, kthID string, systems []string) (map[string]struct{}, error) {
+	var perms []string
+	for _, system := range systems {
+		perms = append(perms, "system-"+system)
+	}
+	granted, err := s.api.FilterForUser(ctx, kthID, "pls", perms)
+	updatable := make(map[string]struct{})
+	for _, perm := range granted {
+		prefix := "system-"
+		if strings.HasPrefix(perm, prefix) {
+			updatable[perm[len(prefix):]] = struct{}{}
+		}
+	}
+	return updatable, err
+}

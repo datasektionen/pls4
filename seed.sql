@@ -68,6 +68,7 @@ insert into roles_permissions (role_id, system, permission) values
     ('dfunkt', 'hodis', 'membercheck'),
     ('kassor', 'cashflow', 'attest-*'),
     ('kassor', 'cashflow', 'confirm'),
+    ('kassor', 'pls', 'system-cashflow'),
     ('drek', 'cashflow', 'see-all'),
     ('drek', 'pls', 'create-role'),
     ('dsys', 'pls', '*'),

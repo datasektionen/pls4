@@ -190,7 +190,14 @@ func role(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Requ
 		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
 		return t.Error(http.StatusInternalServerError)
 	}
-	return t.Role(*role, subroles, members, permissions, mayUpdate)
+
+	var systems []string
+	for _, perm := range permissions {
+		systems = append(systems, perm.System)
+	}
+	mayEditInSystems, err := admin.MayUpdatePermissionsInSystems(ctx, session.KTHID, systems)
+
+	return t.Role(*role, subroles, members, permissions, mayUpdate, mayEditInSystems)
 }
 
 func updateRoleName(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
@@ -410,7 +417,13 @@ func roleRemovePermission(admin *Admin, ctx context.Context, w http.ResponseWrit
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	return t.Permissions(id, permissions)
+	var systems []string
+	for _, perm := range permissions {
+		systems = append(systems, perm.System)
+	}
+	mayEditInSystems, err := admin.MayUpdatePermissionsInSystems(ctx, session.KTHID, systems)
+
+	return t.Permissions(id, permissions, mayEditInSystems)
 }
 
 func login(admin *Admin, w http.ResponseWriter, r *http.Request) {

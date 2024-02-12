@@ -153,14 +153,9 @@ func (s *Admin) GetRolePermissions(ctx context.Context, id, kthID string) ([]mod
 			return nil, err
 		}
 		if p.System != system {
-			mayEdit, err := s.MayUpdatePermissions(ctx, kthID, system)
-			if err != nil {
-				return nil, err
-			}
 			perms = append(perms, models.SystemPermissions{
 				System:      system,
 				Permissions: []string{},
-				MayEdit:     mayEdit,
 			})
 			p = &perms[len(perms)-1]
 		}

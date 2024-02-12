@@ -26,5 +26,4 @@ type Member struct {
 type SystemPermissions struct {
 	System      string
 	Permissions []string
-	MayEdit     bool
 }

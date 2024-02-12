@@ -4,24 +4,15 @@ import (
 	"github.com/datasektionen/pls4/models"
 )
 
-func options(permissions []models.SystemPermissions) bool {
-	for _, p := range permissions {
-		if p.MayEdit {
-			return true
-		}
-	}
-	return false
-}
-
-templ Permissions(roleID string, permissions []models.SystemPermissions) {
+templ Permissions(roleID string, permissions []models.SystemPermissions, mayEditInSystems map[string]struct{}) {
 	<section
-		class={ "grid grid-cols-[auto_1fr" + ternary(options(permissions), "_1fr", "") + "] gap-x-6 gap-y-2 items-center p-3" }
+		class={ "grid grid-cols-[auto_1fr" + ternary(len(mayEditInSystems) > 0, "_1fr", "") + "] gap-x-6 gap-y-2 items-center p-3" }
 		id="permissions"
 		hx-swap="outerHTML"
 	>
 		<p class="font-bold">System</p>
 		<p class="font-bold">Permission</p>
-		if options(permissions) {
+		if len(mayEditInSystems) > 0 {
 			<p class="font-bold">Options</p>
 		}
 		for _, permission := range permissions {
@@ -29,7 +20,7 @@ templ Permissions(roleID string, permissions []models.SystemPermissions) {
 			for _, perm := range permission.Permissions {
 				<p>{ permission.System }</p>
 				<p>{ perm }</p>
-				if permission.MayEdit {
+				if _, ok := mayEditInSystems[permission.System]; ok {
 					<p>
 						<button
 							hx-delete={ "/role/" + roleID + "/permission/" + permission.System + ":" + perm }
@@ -37,7 +28,7 @@ templ Permissions(roleID string, permissions []models.SystemPermissions) {
 							hx-target="#permissions"
 						>Remove</button>
 					</p>
-				} else if options(permissions) {
+				} else if len(mayEditInSystems) > 0 {
 					<p></p>
 				}
 			}
