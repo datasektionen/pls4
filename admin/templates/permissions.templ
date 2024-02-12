@@ -4,15 +4,24 @@ import (
 	"github.com/datasektionen/pls4/models"
 )
 
-templ Permissions(roleID string, permissions []models.SystemPermissions, mayEditInSystems map[string]struct{}) {
+// TODO: remove this whenever possible. I got a weird error during generation from the Permissions
+// template and this got rid of it.
+templ _() {
+}
+
+templ Permissions(
+	roleID string,
+	permissions []models.SystemPermissions,
+	mayAddInSystems, mayDeleteInSystems map[string]struct{},
+) {
 	<section
-		class={ "grid grid-cols-[auto_1fr" + ternary(len(mayEditInSystems) > 0, "_1fr", "") + "] gap-x-6 gap-y-2 items-center p-3" }
+		class={ "grid grid-cols-[auto_1fr" + ternary(len(mayDeleteInSystems) > 0, "_1fr", "") + "] gap-x-6 gap-y-2 items-center p-3" }
 		id="permissions"
 		hx-swap="outerHTML"
 	>
 		<p class="font-bold">System</p>
 		<p class="font-bold">Permission</p>
-		if len(mayEditInSystems) > 0 {
+		if len(mayDeleteInSystems) > 0 {
 			<p class="font-bold">Options</p>
 		}
 		for _, permission := range permissions {
@@ -20,7 +29,7 @@ templ Permissions(roleID string, permissions []models.SystemPermissions, mayEdit
 			for _, perm := range permission.Permissions {
 				<p>{ permission.System }</p>
 				<p>{ perm }</p>
-				if _, ok := mayEditInSystems[permission.System]; ok {
+				if _, ok := mayDeleteInSystems[permission.System]; ok {
 					<p>
 						<button
 							hx-delete={ "/role/" + roleID + "/permission/" + permission.System + ":" + perm }
@@ -28,10 +37,24 @@ templ Permissions(roleID string, permissions []models.SystemPermissions, mayEdit
 							hx-target="#permissions"
 						>Remove</button>
 					</p>
-				} else if len(mayEditInSystems) > 0 {
+				} else if len(mayDeleteInSystems) > 0 {
 					<p></p>
 				}
 			}
 		}
+		<form
+			class="flex items-stretch gap-3 col-span-full"
+			hx-post={ "/role/" + roleID + "/permission" }
+			hx-target="#permissions"
+		>
+			<input type="text" class="border rounded-md" list="addable-systems" required name="system"/>
+			<datalist id="addable-systems">
+				for system := range mayAddInSystems {
+					<option>{ system }</option>
+				}
+			</datalist>
+			<input type="text" class="border rounded-md" required name="permission"/>
+			<button class="bg-slate-300 w-8 h-8">+</button>
+		</form>
 	</section>
 }

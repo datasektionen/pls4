@@ -26,6 +26,7 @@ func Mount(admin *Admin) {
 	http.Handle("GET /role/subrole", partial(admin, roleSubroleForm))
 	http.Handle("POST /role/member", partial(admin, roleMember))
 	http.Handle("GET /role/member", partial(admin, getRoleMembers))
+	http.Handle("POST /role/{id}/permission", partial(admin, roleAddPermission))
 	http.Handle("DELETE /role/{id}/permission/{sysperm}", partial(admin, roleRemovePermission))
 
 	http.Handle("/login", route(admin, login))
@@ -191,13 +192,25 @@ func role(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return t.Error(http.StatusInternalServerError)
 	}
 
+	allSystems, err := admin.GetAllSystems(ctx)
+	if err != nil {
+		slog.Error("Could not get systems", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	mayAddInSystems, err := admin.MayUpdatePermissionsInSystems(ctx, session.KTHID, allSystems)
+	if err != nil {
+		slog.Error("Could not filter systems for permissions", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+
 	var systems []string
 	for _, perm := range permissions {
 		systems = append(systems, perm.System)
 	}
-	mayEditInSystems, err := admin.MayUpdatePermissionsInSystems(ctx, session.KTHID, systems)
+	mayDeleteInSystems, err := admin.MayUpdatePermissionsInSystems(ctx, session.KTHID, systems)
 
-	return t.Role(*role, subroles, members, permissions, mayUpdate, mayEditInSystems)
+	return t.Role(*role, subroles, members, permissions, mayUpdate, mayAddInSystems, mayDeleteInSystems)
 }
 
 func updateRoleName(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
@@ -393,27 +406,62 @@ func getRoleMembers(admin *Admin, ctx context.Context, w http.ResponseWriter, r 
 	return t.Members(id, members, mayUpdate, member, addNew)
 }
 
+func roleAddPermission(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+	session, err := admin.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	roleID := r.PathValue("id")
+	system := r.FormValue("system")
+	permission := r.FormValue("permission")
+
+	if err := admin.AddPermission(ctx, session.KTHID, roleID, system, permission); err != nil {
+		slog.Error("Could add permission to role", "error", err, "role_id", roleID, "system", system, "permission", permission)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	return renderPermissions(admin, ctx, session, roleID)
+}
+
 func roleRemovePermission(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	session, err := admin.GetSession(r)
 	if err != nil {
 		slog.Error("Could not get current session", "error", err)
 		return t.Error(http.StatusInternalServerError)
 	}
-	id := r.PathValue("id")
+	roleID := r.PathValue("id")
 	sysperm := strings.SplitN(r.PathValue("sysperm"), ":", 2)
 	if len(sysperm) != 2 {
 		return t.Error(http.StatusBadRequest, "Invalid system:permission")
 	}
 	system, permission := sysperm[0], sysperm[1]
 
-	if err := admin.RemovePermission(ctx, session.KTHID, id, system, permission); err != nil {
-		slog.Error("Could remove permission from role", "error", err, "role_id", id, "system", system, "permission", permission)
+	if err := admin.RemovePermission(ctx, session.KTHID, roleID, system, permission); err != nil {
+		slog.Error("Could remove permission from role", "error", err, "role_id", roleID, "system", system, "permission", permission)
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	permissions, err := admin.GetRolePermissions(ctx, id, session.KTHID)
+	return renderPermissions(admin, ctx, session, roleID)
+}
+
+func renderPermissions(admin *Admin, ctx context.Context, session Session, roleID string) templ.Component {
+	permissions, err := admin.GetRolePermissions(ctx, roleID, session.KTHID)
 	if err != nil {
-		slog.Error("Could not get role permissions", "error", err, "role_id", id)
+		slog.Error("Could not get role permissions", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	allSystems, err := admin.GetAllSystems(ctx)
+	if err != nil {
+		slog.Error("Could not get systems", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	mayAddInSystems, err := admin.MayUpdatePermissionsInSystems(ctx, session.KTHID, allSystems)
+	if err != nil {
+		slog.Error("Could not filter systems for permissions", "error", err)
 		return t.Error(http.StatusInternalServerError)
 	}
 
@@ -421,9 +469,13 @@ func roleRemovePermission(admin *Admin, ctx context.Context, w http.ResponseWrit
 	for _, perm := range permissions {
 		systems = append(systems, perm.System)
 	}
-	mayEditInSystems, err := admin.MayUpdatePermissionsInSystems(ctx, session.KTHID, systems)
+	mayDeleteInSystems, err := admin.MayUpdatePermissionsInSystems(ctx, session.KTHID, systems)
+	if err != nil {
+		slog.Error("Could not filter systems for permissions", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
 
-	return t.Permissions(id, permissions, mayEditInSystems)
+	return t.Permissions(roleID, permissions, mayAddInSystems, mayDeleteInSystems)
 }
 
 func login(admin *Admin, w http.ResponseWriter, r *http.Request) {

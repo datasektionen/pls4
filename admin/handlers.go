@@ -419,6 +419,25 @@ func (s *Admin) RemovePermission(
 	return err
 }
 
+func (s *Admin) AddPermission(
+	ctx context.Context,
+	kthID, roleID string,
+	system, permission string,
+) error {
+	if ok, err := s.MayUpdatePermissions(ctx, kthID, system); err != nil {
+		return err
+	} else if !ok {
+		// TODO: return an error
+		return nil
+	}
+
+	_, err := s.db.ExecContext(ctx, `
+		insert into roles_permissions (role_id, system, permission)
+		values ($1, $2, $3)
+	`, roleID, system, permission)
+	return err
+}
+
 func (s *Admin) GetUserRoles(
 	ctx context.Context,
 	kthID string,
@@ -450,4 +469,22 @@ func (s *Admin) GetUserRoles(
 		roles = append(roles, role)
 	}
 	return roles, nil
+}
+
+func (s *Admin) GetAllSystems(ctx context.Context) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		select distinct system
+		from roles_permissions
+		union all (select system from api_tokens_permissions)
+	`)
+	if err != nil {
+		return nil, err
+	}
+	var systems []string
+	for rows.Next() {
+		var system string
+		rows.Scan(&system)
+		systems = append(systems, system)
+	}
+	return systems, nil
 }
