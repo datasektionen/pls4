@@ -70,9 +70,6 @@ func partial(admin *Admin, handler func(s *Admin, w http.ResponseWriter, r *http
 }
 
 func index(admin *Admin, w http.ResponseWriter, r *http.Request) templ.Component {
-	if r.URL.Path != "/" {
-		return t.Error(http.StatusNotFound)
-	}
 	session, err := admin.GetSession(r)
 	if err != nil {
 		slog.Error("Could not get current session", "error", err)
