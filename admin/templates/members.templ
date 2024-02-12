@@ -9,7 +9,6 @@ import (
 templ Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMemberID uuid.UUID, addNew bool) {
 	<section
 		class={ "grid grid-cols-[repeat(" + ternary(mayUpdate, "3", "2") + ",auto)] gap-2 items-center p-3" }
-		id="members"
 		hx-swap="outerHTML"
 		hx-target="this"
 	>
@@ -27,75 +26,58 @@ templ Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMe
 					<span></span>
 				}
 			} else if (member.MemberID == toUpdateMemberID ) {
-				<span class="updating font-bold">{ member.KTHID }</span>
+				<span class="font-bold">{ member.KTHID }</span>
 				<span class="updating">
 					<input type="date" name="start-date" value={ member.StartDate.Format(time.DateOnly) }/> -
 					<input type="date" name="end-date" value={ member.EndDate.Format(time.DateOnly) }/>
 				</span>
 				<span>
-					<input
-						type="submit"
-						name="action"
-						value="Save"
-						class="updating cursor-pointer text-blue-700"
-						hx-post="/role/member"
+					<button
+						class="text-blue-700"
+						hx-post={ "/role/" + roleID + "/member/" + member.MemberID.String() }
 						hx-include=".updating"
-					/>
+					>Save</button>
 				</span>
-				<input class="updating" type="hidden" name="member" value={ member.MemberID.String() }/>
-				<input class="updating" type="hidden" name="id" value={ roleID }/>
 			} else {
 				<span class="font-bold">{ member.KTHID }</span>
 				<span>{ member.StartDate.Format(time.DateOnly) } - { member.EndDate.Format(time.DateOnly) }</span>
 				if mayUpdate {
 					<div hx-include="this">
-						<input class="cursor-pointer text-green-800" hx-get="/role/member" type="submit" name="action" value="Edit"/>
-						<input
-							class="cursor-pointer text-red-800"
-							type="submit"
-							name="action"
-							value="Remove"
-							hx-post="/role/member"
+						<button
+							class="text-green-800"
+							hx-get={ "/role/" + roleID + "/member?updateMemberID=" + member.MemberID.String() }
+						>Edit</button>
+						<button
+							class="text-red-800"
+							hx-delete={ "/role/" + roleID + "/member/" + member.MemberID.String() }
 							hx-confirm="Are you sure? Prefer to set end date to yesterday"
-						/>
-						<input
-							class="cursor-pointer text-amber-800"
-							type="submit"
-							hx-post="/role/member"
-							name="action"
-							value="End"
+						>Remove</button>
+						<button
+							class="text-amber-800"
+							hx-post={ "/role/" + roleID + "/member/" + member.MemberID.String() + "/end" }
 							title="Set role membership end date to yesterday"
-						/>
-						<input type="hidden" name="member" value={ member.MemberID.String() }/>
-						<input type="hidden" name="id" value={ roleID }/>
+						>End</button>
 					</div>
 				}
 			}
 		}
 		if addNew {
 			<hr class="col-span-full"/>
-			<input autofocus class="font-bold" type="text" name="kth-id"/>
-			<span>
+			<input autofocus class="adding font-bold" type="text" name="kth-id"/>
+			<span class="adding">
 				<input type="date" name="start-date" value={ time.Now().Format(time.DateOnly) }/> -
 				<input type="date" name="end-date"/>
 			</span>
 			<span>
-				<input
-					type="submit"
-					name="action"
-					value="Add"
-					class="cursor-pointer text-blue-700"
-					hx-post="/role/member"
-					hx-include="#members"
-				/>
+				<button
+					class="text-blue-700"
+					hx-post={ "/role/" + roleID + "/member" }
+					hx-include=".adding"
+				>Add</button>
 			</span>
-			<input type="hidden" name="id" value={ roleID }/>
 		}
 		if mayUpdate {
-			<form hx-get="/role/member?new">
-				<input class="bg-slate-300 w-8 h-8 cursor-pointer" type="submit" value="+"/>
-				<input type="hidden" name="id" value={ roleID }/>
-			</form>
+			<button hx-get={ "/role/" + roleID + "/member?new" } class="bg-slate-300 w-8 h-8">+</button>
 		}
 	</section>
 }

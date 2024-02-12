@@ -25,8 +25,13 @@ func Mount(admin *Admin) {
 	http.Handle("POST /role/{id}/subrole", partial(admin, roleAddSubrole))
 	http.Handle("DELETE /role/{id}/subrole/{subroleID}", partial(admin, roleRemoveSubrole))
 	http.Handle("GET /role/subrole", partial(admin, roleSubroleForm))
-	http.Handle("POST /role/member", partial(admin, roleMember))
-	http.Handle("GET /role/member", partial(admin, getRoleMembers))
+
+	http.Handle("GET /role/{id}/member", partial(admin, getRoleMembers))
+	http.Handle("POST /role/{id}/member", partial(admin, roleAddMember))
+	http.Handle("POST /role/{id}/member/{memberID}", partial(admin, roleUpdateMember))
+	http.Handle("DELETE /role/{id}/member/{memberID}", partial(admin, roleRemoveMember))
+	http.Handle("POST /role/{id}/member/{memberID}/end", partial(admin, roleEndMember))
+
 	http.Handle("POST /role/{id}/permission", partial(admin, roleAddPermission))
 	http.Handle("DELETE /role/{id}/permission/{sysperm}", partial(admin, roleRemovePermission))
 
@@ -335,9 +340,8 @@ func roleSubroleForm(admin *Admin, ctx context.Context, w http.ResponseWriter, r
 	return t.AddSubroleForm(id, options)
 }
 
-func roleMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	id := r.FormValue("id")
-	member, _ := uuid.Parse(r.FormValue("member"))
+func roleAddMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+	roleID := r.PathValue("id")
 
 	session, err := admin.GetSession(r)
 	if err != nil {
@@ -345,20 +349,7 @@ func roleMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *htt
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	action := r.FormValue("action")
 	kthID := r.FormValue("kth-id")
-
-	if action == "Remove" {
-		if err := admin.RemoveMember(ctx, session.KTHID, id, member); err != nil {
-			slog.Error("Could not remove member", "error", err, "member", member)
-			return t.Error(http.StatusInternalServerError)
-		}
-	} else if action == "End" {
-		if err := admin.UpdateMember(ctx, session.KTHID, id, member, time.Time{}, time.Now().AddDate(0, 0, -1)); err != nil {
-			slog.Error("Could not edit member", "error", err, "role_id", id, "kth_id", kthID)
-			return t.Error(http.StatusInternalServerError)
-		}
-	}
 
 	startDate, err := time.Parse(time.DateOnly, r.FormValue("start-date"))
 	if err != nil && r.Form.Has("start-date") {
@@ -369,36 +360,123 @@ func roleMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *htt
 		return t.Error(http.StatusBadRequest)
 	}
 
-	if action == "Save" {
-		if err := admin.UpdateMember(ctx, session.KTHID, id, member, startDate, endDate); err != nil {
-			slog.Error("Could not edit member", "error", err, "member", member)
-			return t.Error(http.StatusInternalServerError)
-		}
-	} else if action == "Add" {
-		if err := admin.AddMember(ctx, session.KTHID, id, kthID, startDate, endDate); err != nil {
-			slog.Error("Could not add member", "error", err, "role_id", id, "kth_id", kthID)
-			return t.Error(http.StatusInternalServerError)
-		}
-	}
-
-	members, err := admin.GetRoleMembers(ctx, id, true, true)
-	if err != nil {
-		slog.Error("Could not get members", "error", err, "role_id", id)
+	if err := admin.AddMember(ctx, session.KTHID, roleID, kthID, startDate, endDate); err != nil {
+		slog.Error("Could not add member", "error", err, "role_id", roleID, "kth_id", kthID)
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
+	members, err := admin.GetRoleMembers(ctx, roleID, true, true)
 	if err != nil {
-		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
+		slog.Error("Could not get members", "error", err, "role_id", roleID)
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	return t.Members(id, members, mayUpdate, uuid.Nil, false)
+	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, roleID)
+	if err != nil {
+		slog.Error("Could not check if role may be updated", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	return t.Members(roleID, members, mayUpdate, uuid.Nil, false)
+}
+
+func roleUpdateMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+	roleID := r.PathValue("id")
+	memberID, err := uuid.Parse(r.PathValue("memberID"))
+	if err != nil {
+		return t.Error(http.StatusBadRequest, "Invalid syntax for member uuid")
+	}
+
+	session, err := admin.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	startDate, err := time.Parse(time.DateOnly, r.FormValue("start-date"))
+	if err != nil && r.Form.Has("start-date") {
+		return t.Error(http.StatusBadRequest, "Invalid syntax for start date")
+	}
+	endDate, err := time.Parse(time.DateOnly, r.FormValue("end-date"))
+	if err != nil && r.Form.Has("end-date") {
+		return t.Error(http.StatusBadRequest, "Invalid syntax for start date")
+	}
+
+	if err := admin.UpdateMember(ctx, session.KTHID, roleID, memberID, startDate, endDate); err != nil {
+		slog.Error("Could not edit member", "error", err, "member", memberID)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	members, err := admin.GetRoleMembers(ctx, roleID, true, true)
+	if err != nil {
+		slog.Error("Could not get members", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, roleID)
+	if err != nil {
+		slog.Error("Could not check if role may be updated", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	return t.Members(roleID, members, mayUpdate, uuid.Nil, false)
+}
+
+func roleRemoveMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+	roleID := r.PathValue("id")
+	member, _ := uuid.Parse(r.PathValue("memberID"))
+
+	session, err := admin.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	if err := admin.RemoveMember(ctx, session.KTHID, roleID, member); err != nil {
+		slog.Error("Could not remove member", "error", err, "member", member)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	return renderMembers(admin, ctx, session, roleID)
+}
+
+func roleEndMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+	roleID := r.PathValue("id")
+	member, _ := uuid.Parse(r.PathValue("memberID"))
+
+	session, err := admin.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	if err := admin.UpdateMember(ctx, session.KTHID, roleID, member, time.Time{}, time.Now().AddDate(0, 0, -1)); err != nil {
+		slog.Error("Could not edit member", "error", err, "role_id", roleID, "member", member)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	return renderMembers(admin, ctx, session, roleID)
+}
+
+func renderMembers(admin *Admin, ctx context.Context, session Session, roleID string) templ.Component {
+	members, err := admin.GetRoleMembers(ctx, roleID, true, true)
+	if err != nil {
+		slog.Error("Could not get members", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, roleID)
+	if err != nil {
+		slog.Error("Could not check if role may be updated", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	return t.Members(roleID, members, mayUpdate, uuid.Nil, false)
 }
 
 func getRoleMembers(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	id := r.FormValue("id")
-	member, _ := uuid.Parse(r.FormValue("member"))
+	id := r.PathValue("id")
+	toUpdateMember, _ := uuid.Parse(r.FormValue("updateMemberID"))
 	addNew := r.Form.Has("new")
 
 	session, err := admin.GetSession(r)
@@ -418,7 +496,7 @@ func getRoleMembers(admin *Admin, ctx context.Context, w http.ResponseWriter, r 
 		slog.Error("Could not list roles", "error", err)
 		return t.Error(http.StatusInternalServerError)
 	}
-	return t.Members(id, members, mayUpdate, member, addNew)
+	return t.Members(id, members, mayUpdate, toUpdateMember, addNew)
 }
 
 func roleAddPermission(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
