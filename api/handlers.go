@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var permissionRegex = regexp.MustCompile("^[a-z]+(-[a-z]+)*$")
+var permissionRegex = regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*$")
 
 func (s *API) CheckUser(ctx context.Context, kthID, system string, permission string) (bool, error) {
 	if !permissionRegex.MatchString(permission) {

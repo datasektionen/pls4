@@ -1,5 +1,5 @@
 create table roles (
-    id           text primary key check(id ~ '^[a-z]+(-[a-z]+)*$'),
+    id           text primary key check(id ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
     display_name text not null,
     description  text not null
 );
@@ -29,7 +29,7 @@ create table roles_roles (
 create table roles_permissions (
     role_id       text not null,
     system        text not null,
-    permission    text not null check(permission ~ '^\*|[a-z]+(-[a-z]+)*(-\*)?$'),
+    permission    text not null check(permission ~ '^\*|[a-z0-9]+(-[a-z0-9]+)*(-\*)?$'),
 
     foreign key (role_id) references roles (id),
     primary key (role_id, system, permission)
@@ -48,7 +48,7 @@ create table api_tokens (
 create table api_tokens_permissions (
     api_token_id  uuid not null,
     system        text not null,
-    permission    text not null check(permission ~ '^\*|[a-z]+(-[a-z]+)*(-\*)?$'),
+    permission    text not null check(permission ~ '^\*|[a-z0-9]+(-[a-z0-9]+)*(-\*)?$'),
 
     foreign key (api_token_id) references api_tokens (id),
     primary key (api_token_id, system, permission)

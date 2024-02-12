@@ -30,7 +30,7 @@ templ Roles(roles []models.Role, mayCreate bool, deletable map[string]struct{}) 
 			if _, ok := deletable[role.ID]; ok {
 				<form
 					class="text-red-800"
-					hx-delete={"/role/" + role.ID}
+					hx-delete={ "/role/" + role.ID }
 					hx-swap="innerHTML"
 					hx-confirm="Are you sure?"
 					hx-target="main"
@@ -52,7 +52,14 @@ templ CreateRoleForm(roles []models.Role) {
 		<h3 class="text-xl font-bold">Create role</h3>
 		<div>
 			<label for="id">ID:</label>
-			<input class="border-b border-black" type="text" id="id" name="id" pattern="[a-z]+(-[a-z]+)*" required/>
+			<input
+				class="border-b border-black"
+				type="text"
+				id="id"
+				name="id"
+				pattern="[a-z0-9]+(-[a-z0-9]+)*"
+				required
+			/>
 			<label for="display-name">Display name:</label>
 			<input class="border-b border-black" type="text" id="display-name" name="display-name" required/>
 		</div>

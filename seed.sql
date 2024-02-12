@@ -69,6 +69,7 @@ insert into roles_permissions (role_id, system, permission) values
     ('kassor', 'cashflow', 'attest-*'),
     ('kassor', 'cashflow', 'confirm'),
     ('drek', 'cashflow', 'see-all'),
+    ('drek', 'pls', 'create-role'),
     ('dsys', 'pls', '*'),
     ('komm', 'pls', 'system-calypso');
 
