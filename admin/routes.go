@@ -22,7 +22,8 @@ func Mount(admin *Admin) {
 	http.Handle("GET /role/name", partial(admin, roleNameForm))
 	http.Handle("POST /role/description", partial(admin, updateRoleDescription))
 	http.Handle("GET /role/description", partial(admin, roleDescriptionForm))
-	http.Handle("POST /role/subrole", partial(admin, postRoleSubrole))
+	http.Handle("POST /role/{id}/subrole", partial(admin, roleAddSubrole))
+	http.Handle("DELETE /role/{id}/subrole/{subroleID}", partial(admin, roleRemoveSubrole))
 	http.Handle("GET /role/subrole", partial(admin, roleSubroleForm))
 	http.Handle("POST /role/member", partial(admin, roleMember))
 	http.Handle("GET /role/member", partial(admin, getRoleMembers))
@@ -273,40 +274,54 @@ func roleDescriptionForm(admin *Admin, ctx context.Context, w http.ResponseWrite
 	return t.RoleDescriptionForm(*role)
 }
 
-func postRoleSubrole(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func roleAddSubrole(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	session, err := admin.GetSession(r)
 	if err != nil {
 		slog.Error("Could not get current session", "error", err)
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	id := r.FormValue("id")
+	roleID := r.PathValue("id")
 	subrole := r.FormValue("subrole")
-	action := r.FormValue("action")
 
-	if action == "Add" {
-		if err := admin.AddSubrole(ctx, session.KTHID, id, subrole); err != nil {
-			slog.Error("Could not add subrole", "error", err, "role_id", id, "subrole_id", subrole)
-			return t.Error(http.StatusInternalServerError)
-		}
-	} else if action == "Remove" {
-		if err := admin.RemoveSubrole(ctx, session.KTHID, id, subrole); err != nil {
-			slog.Error("Could not remove subrole", "error", err, "role_id", id, "subrole_id", subrole)
-			return t.Error(http.StatusInternalServerError)
-		}
-	}
-
-	subroles, err := admin.GetSubroles(ctx, id)
-	if err != nil {
-		slog.Error("Could not get subroles", "error", err, "role_id", id)
+	if err := admin.AddSubrole(ctx, session.KTHID, roleID, subrole); err != nil {
+		slog.Error("Could not add subrole", "error", err, "role_id", roleID, "subrole_id", subrole)
 		return t.Error(http.StatusInternalServerError)
 	}
-	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
+
+	return renderSubroles(admin, ctx, session, roleID)
+}
+
+func roleRemoveSubrole(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+	session, err := admin.GetSession(r)
 	if err != nil {
-		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
+		slog.Error("Could not get current session", "error", err)
 		return t.Error(http.StatusInternalServerError)
 	}
-	return t.Subroles(id, subroles, mayUpdate)
+
+	roleID := r.PathValue("id")
+	subroleID := r.PathValue("subroleID")
+
+	if err := admin.RemoveSubrole(ctx, session.KTHID, roleID, subroleID); err != nil {
+		slog.Error("Could not remove subrole", "error", err, "role_id", roleID, "subrole_id", subroleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	return renderSubroles(admin, ctx, session, roleID)
+}
+
+func renderSubroles(admin *Admin, ctx context.Context, session Session, roleID string) templ.Component {
+	subroles, err := admin.GetSubroles(ctx, roleID)
+	if err != nil {
+		slog.Error("Could not get subroles", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, roleID)
+	if err != nil {
+		slog.Error("Could not check if role may be updated", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+	return t.Subroles(roleID, subroles, mayUpdate)
 }
 
 func roleSubroleForm(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {

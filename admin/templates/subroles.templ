@@ -25,10 +25,8 @@ templ Subroles(roleID string, subroles []models.Role, mayUpdate bool) {
 					}
 				</span>
 				if mayUpdate {
-					<form class="text-red-800" hx-post="/role/subrole" hx-target="#subroles">
-						<input type="submit" name="action" value="Remove" class="cursor-pointer"/>
-						<input type="hidden" name="id" value={ roleID }/>
-						<input type="hidden" name="subrole" value={ subrole.ID }/>
+					<form class="text-red-800" hx-delete={ "/role/" + roleID + "/subrole/" + subrole.ID } hx-target="#subroles">
+						<button>Remove</button>
 					</form>
 				}
 			}
@@ -46,13 +44,12 @@ templ AddSubroleButton(roleID string) {
 }
 
 templ AddSubroleForm(roleID string, options []models.Role) {
-	<form hx-post="/role/subrole" class="flex gap-2 p-4 pt-0" hx-target="#subroles">
-		<input type="hidden" name="id" value={ roleID }/>
+	<form hx-post={ "/role/" + roleID + "/subrole" } class="flex gap-2 p-4 pt-0" hx-target="#subroles">
 		<select name="subrole" class="p-2">
 			for _, option := range options {
 				<option value={ option.ID }>{ option.DisplayName }</option>
 			}
 		</select>
-		<input type="submit" name="action" value="Add" class="bg-blue-300 px-2 rounded-md"/>
+		<button class="bg-blue-300 px-2 rounded-md">Add</button>
 	</form>
 }
