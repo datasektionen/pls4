@@ -6,13 +6,13 @@ import (
 	"github.com/datasektionen/pls4/models"
 )
 
-templ Roles(roles []models.Role, mayCreate, mayDelete bool) {
+templ Roles(roles []models.Role, mayCreate bool, deletable map[string]struct{}) {
 	<h2 class="text-2xl font-bold">Roles</h2>
-	<section class={ "grid grid-cols-[repeat(" + ternary(mayDelete, "4", "3") + ",auto)] gap-2 items-center p-4" }>
+	<section class={ "grid grid-cols-[repeat(" + ternary(len(deletable) > 0, "4", "3") + ",auto)] gap-2 items-center p-4" }>
 		<p class="font-bold">Name</p>
 		<p class="font-bold">Members</p>
 		<p class="font-bold">Description</p>
-		if mayDelete {
+		if len(deletable) > 0 {
 			<p class="font-bold">Options</p>
 		}
 		for _, role := range roles {
@@ -27,7 +27,7 @@ templ Roles(roles []models.Role, mayCreate, mayDelete bool) {
 				}
 			</span>
 			<span>{ role.Description }</span>
-			if mayDelete {
+			if _, ok := deletable[role.ID]; ok {
 				<form
 					class="text-red-800"
 					hx-delete={"/role/" + role.ID}

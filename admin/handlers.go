@@ -366,9 +366,9 @@ var tableRexeg = regexp.MustCompile(`on table "roles_(.*)"$`)
 
 func (s *Admin) DeleteRole(
 	ctx context.Context,
-	kthID, id string,
+	kthID, roleID string,
 ) error {
-	if ok, err := s.MayDeleteRoles(ctx, kthID); err != nil {
+	if ok, err := s.MayDeleteRole(ctx, kthID, roleID); err != nil {
 		return err
 	} else if !ok {
 		// TODO: return an error
@@ -382,14 +382,14 @@ func (s *Admin) DeleteRole(
 	_, err = tx.Exec(`
 		delete from roles_roles
 		where subrole_id = $1
-	`, id)
+	`, roleID)
 	if err != nil {
 		return err
 	}
 	_, err = tx.Exec(`
 		delete from roles
 		where id = $1
-	`, id)
+	`, roleID)
 	if err != nil && strings.HasPrefix(err.Error(), "pq: update or delete on table") {
 		match := tableRexeg.FindStringSubmatch(err.Error())
 		if len(match) > 1 {

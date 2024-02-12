@@ -73,29 +73,36 @@ func partial(admin *Admin, handler func(s *Admin, ctx context.Context, w http.Re
 	}
 }
 
+func renderRoles(admin *Admin, ctx context.Context, session Session) templ.Component {
+	roles, err := admin.ListRoles(ctx)
+	if err != nil {
+		slog.Error("Could not get roles", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+	mayCreate, err := admin.MayCreateRoles(ctx, session.KTHID)
+	if err != nil {
+		slog.Error("Could not check if user may create roles", "error", err, "kth_id", session.KTHID)
+		return t.Error(http.StatusInternalServerError)
+	}
+	var roleIDs []string
+	for _, role := range roles {
+		roleIDs = append(roleIDs, role.ID)
+	}
+	deletable, err := admin.MayDeleteRoles(ctx, session.KTHID, roleIDs)
+	if err != nil {
+		slog.Error("Could not check if user may delete roles", "error", err, "kth_id", session.KTHID)
+		return t.Error(http.StatusInternalServerError)
+	}
+	return t.Roles(roles, mayCreate, deletable)
+}
+
 func index(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	session, err := admin.GetSession(r)
 	if err != nil {
 		slog.Error("Could not get current session", "error", err)
 		return t.Error(http.StatusInternalServerError)
 	}
-
-	mayCreate, err := admin.MayCreateRoles(ctx, session.KTHID)
-	if err != nil {
-		slog.Error("Could not check if user may create roles", "error", err, "kth_id", session.KTHID)
-		return t.Error(http.StatusInternalServerError)
-	}
-	mayDelete, err := admin.MayDeleteRoles(ctx, session.KTHID)
-	if err != nil {
-		slog.Error("Could not check if user may delete roles", "error", err, "kth_id", session.KTHID)
-		return t.Error(http.StatusInternalServerError)
-	}
-	roles, err := admin.ListRoles(ctx)
-	if err != nil {
-		slog.Error("Could not get roles", "error", err)
-		return t.Error(http.StatusInternalServerError)
-	}
-	return t.Roles(roles, mayCreate, mayDelete)
+	return renderRoles(admin, ctx, session)
 }
 
 func createRole(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
@@ -114,22 +121,7 @@ func createRole(admin *Admin, ctx context.Context, w http.ResponseWriter, r *htt
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	mayCreate, err := admin.MayCreateRoles(ctx, session.KTHID)
-	if err != nil {
-		slog.Error("Could not check if user may create roles", "error", err, "kth_id", session.KTHID)
-		return t.Error(http.StatusInternalServerError)
-	}
-	mayDelete, err := admin.MayDeleteRoles(ctx, session.KTHID)
-	if err != nil {
-		slog.Error("Could not check if user may delete roles", "error", err, "kth_id", session.KTHID)
-		return t.Error(http.StatusInternalServerError)
-	}
-	roles, err := admin.ListRoles(ctx)
-	if err != nil {
-		slog.Error("Could not get roles", "error", err)
-		return t.Error(http.StatusInternalServerError)
-	}
-	return t.Roles(roles, mayCreate, mayDelete)
+	return renderRoles(admin, ctx, session)
 }
 
 func deleteRole(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
@@ -145,22 +137,7 @@ func deleteRole(admin *Admin, ctx context.Context, w http.ResponseWriter, r *htt
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	mayCreate, err := admin.MayCreateRoles(ctx, session.KTHID)
-	if err != nil {
-		slog.Error("Could not check if user may create roles", "error", err, "kth_id", session.KTHID)
-		return t.Error(http.StatusInternalServerError)
-	}
-	mayDelete, err := admin.MayDeleteRoles(ctx, session.KTHID)
-	if err != nil {
-		slog.Error("Could not check if user may delete roles", "error", err, "kth_id", session.KTHID)
-		return t.Error(http.StatusInternalServerError)
-	}
-	roles, err := admin.ListRoles(ctx)
-	if err != nil {
-		slog.Error("Could not get roles", "error", err)
-		return t.Error(http.StatusInternalServerError)
-	}
-	return t.Roles(roles, mayCreate, mayDelete)
+	return renderRoles(admin, ctx, session)
 }
 
 func createRoleForm(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
