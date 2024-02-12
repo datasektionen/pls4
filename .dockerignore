@@ -1,5 +1,6 @@
 **/*.txt
 **/*_templ.go
+.direnv/
 
 **/.DS_Store
 **/.classpath
