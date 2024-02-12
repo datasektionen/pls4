@@ -14,23 +14,27 @@ import (
 
 func Mount(admin *Admin) {
 	http.Handle("/{$}", page(admin, index))
+
+	http.Handle("GET /role/{id}", page(admin, getRole))
+	http.Handle("GET /role", partial(admin, createRoleForm))
 	http.Handle("POST /role", partial(admin, createRole))
 	http.Handle("DELETE /role/{id}", partial(admin, deleteRole))
-	http.Handle("GET /role", partial(admin, createRoleForm))
-	http.Handle("GET /role/{id}", page(admin, role))
-	http.Handle("POST /role/name", partial(admin, updateRoleName))
-	http.Handle("GET /role/name", partial(admin, roleNameForm))
-	http.Handle("POST /role/description", partial(admin, updateRoleDescription))
-	http.Handle("GET /role/description", partial(admin, roleDescriptionForm))
+
+	http.Handle("GET /role/{id}/name", partial(admin, roleNameForm))
+	http.Handle("POST /role/{id}/name", partial(admin, updateRoleName))
+
+	http.Handle("GET /role/{id}/description", partial(admin, roleDescriptionForm))
+	http.Handle("POST /role/{id}/description", partial(admin, updateRoleDescription))
+
+	http.Handle("GET /role/{id}/subrole", partial(admin, roleSubroleForm))
 	http.Handle("POST /role/{id}/subrole", partial(admin, roleAddSubrole))
 	http.Handle("DELETE /role/{id}/subrole/{subroleID}", partial(admin, roleRemoveSubrole))
-	http.Handle("GET /role/subrole", partial(admin, roleSubroleForm))
 
 	http.Handle("GET /role/{id}/member", partial(admin, getRoleMembers))
 	http.Handle("POST /role/{id}/member", partial(admin, roleAddMember))
 	http.Handle("POST /role/{id}/member/{memberID}", partial(admin, roleUpdateMember))
-	http.Handle("DELETE /role/{id}/member/{memberID}", partial(admin, roleRemoveMember))
 	http.Handle("POST /role/{id}/member/{memberID}/end", partial(admin, roleEndMember))
+	http.Handle("DELETE /role/{id}/member/{memberID}", partial(admin, roleRemoveMember))
 
 	http.Handle("POST /role/{id}/permission", partial(admin, roleAddPermission))
 	http.Handle("DELETE /role/{id}/permission/{sysperm}", partial(admin, roleRemovePermission))
@@ -112,6 +116,78 @@ func index(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Req
 	return renderRoles(admin, ctx, session)
 }
 
+func getRole(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+	roleID := r.PathValue("id")
+	role, err := admin.GetRole(ctx, roleID)
+	if err != nil {
+		slog.Error("Could not get role", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+	if role == nil {
+		return t.Error(http.StatusNotFound, "No role with id "+roleID)
+	}
+	subroles, err := admin.GetSubroles(ctx, roleID)
+	if err != nil {
+		slog.Error("Could not get subroles", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+	members, err := admin.GetRoleMembers(ctx, roleID, true, true)
+	if err != nil {
+		slog.Error("Could not get role members", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+	session, err := admin.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+	permissions, err := admin.GetRolePermissions(ctx, roleID, session.KTHID)
+	if err != nil {
+		slog.Error("Could not get role persmissions", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, roleID)
+	if err != nil {
+		slog.Error("Could not check if role may be updated", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	allSystems, err := admin.GetAllSystems(ctx)
+	if err != nil {
+		slog.Error("Could not get systems", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	mayAddInSystems, err := admin.MayUpdatePermissionsInSystems(ctx, session.KTHID, allSystems)
+	if err != nil {
+		slog.Error("Could not filter systems for permissions", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	var systems []string
+	for _, perm := range permissions {
+		systems = append(systems, perm.System)
+	}
+	mayDeleteInSystems, err := admin.MayUpdatePermissionsInSystems(ctx, session.KTHID, systems)
+
+	return t.Role(*role, subroles, members, permissions, mayUpdate, mayAddInSystems, mayDeleteInSystems)
+}
+
+func createRoleForm(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+	session, err := admin.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	roles, err := admin.GetUserRoles(r.Context(), session.KTHID)
+	if err != nil {
+		slog.Error("Could not get roles for user", "error", err, "kth_id", session.KTHID)
+		return t.Error(http.StatusInternalServerError)
+	}
+	return t.CreateRoleForm(roles)
+}
+
 func createRole(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	session, err := admin.GetSession(r)
 	if err != nil {
@@ -147,80 +223,22 @@ func deleteRole(admin *Admin, ctx context.Context, w http.ResponseWriter, r *htt
 	return renderRoles(admin, ctx, session)
 }
 
-func createRoleForm(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	session, err := admin.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return t.Error(http.StatusInternalServerError)
-	}
+func roleNameForm(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+	roleID := r.PathValue("id")
 
-	roles, err := admin.GetUserRoles(r.Context(), session.KTHID)
+	role, err := admin.GetRole(r.Context(), roleID)
 	if err != nil {
-		slog.Error("Could not get roles for user", "error", err, "kth_id", session.KTHID)
-		return t.Error(http.StatusInternalServerError)
-	}
-	return t.CreateRoleForm(roles)
-}
-
-func role(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	id := r.PathValue("id")
-	role, err := admin.GetRole(ctx, id)
-	if err != nil {
-		slog.Error("Could not get role", "error", err, "role_id", id)
+		slog.Error("Could not get role", "error", err, "role_id", roleID)
 		return t.Error(http.StatusInternalServerError)
 	}
 	if role == nil {
-		return t.Error(http.StatusNotFound, "No role with id "+id)
+		return t.Error(http.StatusNotFound, "No role with id "+roleID)
 	}
-	subroles, err := admin.GetSubroles(ctx, id)
-	if err != nil {
-		slog.Error("Could not get subroles", "error", err, "role_id", id)
-		return t.Error(http.StatusInternalServerError)
-	}
-	members, err := admin.GetRoleMembers(ctx, id, true, true)
-	if err != nil {
-		slog.Error("Could not get role members", "error", err, "role_id", id)
-		return t.Error(http.StatusInternalServerError)
-	}
-	session, err := admin.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err, "role_id", id)
-		return t.Error(http.StatusInternalServerError)
-	}
-	permissions, err := admin.GetRolePermissions(ctx, id, session.KTHID)
-	if err != nil {
-		slog.Error("Could not get role persmissions", "error", err, "role_id", id)
-		return t.Error(http.StatusInternalServerError)
-	}
-	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
-	if err != nil {
-		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
-		return t.Error(http.StatusInternalServerError)
-	}
-
-	allSystems, err := admin.GetAllSystems(ctx)
-	if err != nil {
-		slog.Error("Could not get systems", "error", err)
-		return t.Error(http.StatusInternalServerError)
-	}
-
-	mayAddInSystems, err := admin.MayUpdatePermissionsInSystems(ctx, session.KTHID, allSystems)
-	if err != nil {
-		slog.Error("Could not filter systems for permissions", "error", err)
-		return t.Error(http.StatusInternalServerError)
-	}
-
-	var systems []string
-	for _, perm := range permissions {
-		systems = append(systems, perm.System)
-	}
-	mayDeleteInSystems, err := admin.MayUpdatePermissionsInSystems(ctx, session.KTHID, systems)
-
-	return t.Role(*role, subroles, members, permissions, mayUpdate, mayAddInSystems, mayDeleteInSystems)
+	return t.RoleNameForm(*role)
 }
 
 func updateRoleName(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	id := r.FormValue("id")
+	roleID := r.PathValue("id")
 
 	displayName := r.FormValue("display-name")
 	session, err := admin.GetSession(r)
@@ -228,29 +246,29 @@ func updateRoleName(admin *Admin, ctx context.Context, w http.ResponseWriter, r 
 		// TODO: redirect to login?
 		return t.Error(http.StatusUnauthorized)
 	}
-	if err := admin.UpdateRole(r.Context(), session.KTHID, id, displayName, ""); err != nil {
+	if err := admin.UpdateRole(r.Context(), session.KTHID, roleID, displayName, ""); err != nil {
 		slog.Error("Could not update role name", "error", err)
 		return t.Error(http.StatusInternalServerError)
 	}
-	return t.RoleNameDisplay(id, displayName, true)
+	return t.RoleNameDisplay(roleID, displayName, true)
 }
 
-func roleNameForm(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	id := r.FormValue("id")
+func roleDescriptionForm(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+	roleID := r.PathValue("id")
 
-	role, err := admin.GetRole(r.Context(), id)
+	role, err := admin.GetRole(r.Context(), roleID)
 	if err != nil {
-		slog.Error("Could not get role", "error", err, "role_id", id)
+		slog.Error("Could not get role", "error", err, "role_id", roleID)
 		return t.Error(http.StatusInternalServerError)
 	}
 	if role == nil {
-		return t.Error(http.StatusNotFound, "No role with id "+id)
+		return t.Error(http.StatusNotFound, "No role with id "+roleID)
 	}
-	return t.RoleNameForm(*role)
+	return t.RoleDescriptionForm(*role)
 }
 
 func updateRoleDescription(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	id := r.FormValue("id")
+	roleID := r.PathValue("id")
 
 	description := r.FormValue("description")
 	session, err := admin.GetSession(r)
@@ -258,25 +276,22 @@ func updateRoleDescription(admin *Admin, ctx context.Context, w http.ResponseWri
 		// TODO: redirect to login?
 		return t.Error(http.StatusUnauthorized)
 	}
-	if err := admin.UpdateRole(r.Context(), session.KTHID, id, "", description); err != nil {
+	if err := admin.UpdateRole(r.Context(), session.KTHID, roleID, "", description); err != nil {
 		slog.Error("Could not update role description", "error", err)
 		return t.Error(http.StatusInternalServerError)
 	}
-	return t.RoleDescriptionDisplay(id, description, true)
+	return t.RoleDescriptionDisplay(roleID, description, true)
 }
 
-func roleDescriptionForm(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	id := r.FormValue("id")
+func roleSubroleForm(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+	roleID := r.PathValue("id")
 
-	role, err := admin.GetRole(r.Context(), id)
+	options, err := admin.ListRoles(ctx)
 	if err != nil {
-		slog.Error("Could not get role", "error", err, "role_id", id)
+		slog.Error("Could not list roles", "error", err)
 		return t.Error(http.StatusInternalServerError)
 	}
-	if role == nil {
-		return t.Error(http.StatusNotFound, "No role with id "+id)
-	}
-	return t.RoleDescriptionForm(*role)
+	return t.AddSubroleForm(roleID, options)
 }
 
 func roleAddSubrole(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
@@ -329,15 +344,29 @@ func renderSubroles(admin *Admin, ctx context.Context, session Session, roleID s
 	return t.Subroles(roleID, subroles, mayUpdate)
 }
 
-func roleSubroleForm(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	id := r.URL.Query().Get("id")
+func getRoleMembers(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+	id := r.PathValue("id")
+	toUpdateMember, _ := uuid.Parse(r.FormValue("updateMemberID"))
+	addNew := r.Form.Has("new")
 
-	options, err := admin.ListRoles(ctx)
+	session, err := admin.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
+	if err != nil {
+		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	members, err := admin.GetRoleMembers(ctx, id, true, true)
 	if err != nil {
 		slog.Error("Could not list roles", "error", err)
 		return t.Error(http.StatusInternalServerError)
 	}
-	return t.AddSubroleForm(id, options)
+	return t.Members(id, members, mayUpdate, toUpdateMember, addNew)
 }
 
 func roleAddMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
@@ -422,24 +451,6 @@ func roleUpdateMember(admin *Admin, ctx context.Context, w http.ResponseWriter, 
 	return t.Members(roleID, members, mayUpdate, uuid.Nil, false)
 }
 
-func roleRemoveMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	roleID := r.PathValue("id")
-	member, _ := uuid.Parse(r.PathValue("memberID"))
-
-	session, err := admin.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return t.Error(http.StatusInternalServerError)
-	}
-
-	if err := admin.RemoveMember(ctx, session.KTHID, roleID, member); err != nil {
-		slog.Error("Could not remove member", "error", err, "member", member)
-		return t.Error(http.StatusInternalServerError)
-	}
-
-	return renderMembers(admin, ctx, session, roleID)
-}
-
 func roleEndMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	member, _ := uuid.Parse(r.PathValue("memberID"))
@@ -458,26 +469,9 @@ func roleEndMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *
 	return renderMembers(admin, ctx, session, roleID)
 }
 
-func renderMembers(admin *Admin, ctx context.Context, session Session, roleID string) templ.Component {
-	members, err := admin.GetRoleMembers(ctx, roleID, true, true)
-	if err != nil {
-		slog.Error("Could not get members", "error", err, "role_id", roleID)
-		return t.Error(http.StatusInternalServerError)
-	}
-
-	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, roleID)
-	if err != nil {
-		slog.Error("Could not check if role may be updated", "error", err, "role_id", roleID)
-		return t.Error(http.StatusInternalServerError)
-	}
-
-	return t.Members(roleID, members, mayUpdate, uuid.Nil, false)
-}
-
-func getRoleMembers(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	id := r.PathValue("id")
-	toUpdateMember, _ := uuid.Parse(r.FormValue("updateMemberID"))
-	addNew := r.Form.Has("new")
+func roleRemoveMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+	roleID := r.PathValue("id")
+	member, _ := uuid.Parse(r.PathValue("memberID"))
 
 	session, err := admin.GetSession(r)
 	if err != nil {
@@ -485,18 +479,12 @@ func getRoleMembers(admin *Admin, ctx context.Context, w http.ResponseWriter, r 
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
-	if err != nil {
-		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
+	if err := admin.RemoveMember(ctx, session.KTHID, roleID, member); err != nil {
+		slog.Error("Could not remove member", "error", err, "member", member)
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	members, err := admin.GetRoleMembers(ctx, id, true, true)
-	if err != nil {
-		slog.Error("Could not list roles", "error", err)
-		return t.Error(http.StatusInternalServerError)
-	}
-	return t.Members(id, members, mayUpdate, toUpdateMember, addNew)
+	return renderMembers(admin, ctx, session, roleID)
 }
 
 func roleAddPermission(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
@@ -516,6 +504,22 @@ func roleAddPermission(admin *Admin, ctx context.Context, w http.ResponseWriter,
 	}
 
 	return renderPermissions(admin, ctx, session, roleID)
+}
+
+func renderMembers(admin *Admin, ctx context.Context, session Session, roleID string) templ.Component {
+	members, err := admin.GetRoleMembers(ctx, roleID, true, true)
+	if err != nil {
+		slog.Error("Could not get members", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, roleID)
+	if err != nil {
+		slog.Error("Could not check if role may be updated", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	return t.Members(roleID, members, mayUpdate, uuid.Nil, false)
 }
 
 func roleRemovePermission(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
