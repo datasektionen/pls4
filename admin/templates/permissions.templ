@@ -16,7 +16,7 @@ func options(permissions []models.SystemPermissions) bool {
 templ Permissions(roleID string, permissions []models.SystemPermissions) {
 	<section
 		class={ "grid grid-cols-[auto_1fr" + ternary(options(permissions), "_1fr", "") + "] gap-x-6 gap-y-2 items-center p-3" }
-		id="members"
+		id="permissions"
 		hx-swap="outerHTML"
 	>
 		<p class="font-bold">System</p>
@@ -34,6 +34,7 @@ templ Permissions(roleID string, permissions []models.SystemPermissions) {
 						<button
 							hx-delete={ "/role/" + roleID + "/permission/" + permission.System + ":" + perm }
 							class="text-red-800"
+							hx-target="#permissions"
 						>Remove</button>
 					</p>
 				} else if options(permissions) {

@@ -8,7 +8,7 @@ import (
 
 templ Roles(roles []models.Role, mayCreate, mayDelete bool) {
 	<h2 class="text-2xl font-bold">Roles</h2>
-	<section class={ "grid grid-cols-" + ternary(mayDelete, "4", "3") + " gap-2 items-center p-4" }>
+	<section class={ "grid grid-cols-[repeat(" + ternary(mayDelete, "4", "3") + ",auto)] gap-2 items-center p-4" }>
 		<p class="font-bold">Name</p>
 		<p class="font-bold">Members</p>
 		<p class="font-bold">Description</p>
@@ -33,6 +33,7 @@ templ Roles(roles []models.Role, mayCreate, mayDelete bool) {
 					hx-post="/roles"
 					hx-swap="innerHTML"
 					hx-confirm="Are you sure?"
+					hx-target="main"
 				>
 					<input type="submit" name="action" value="Delete" class="cursor-pointer"/>
 					<input type="hidden" name="id" value={ role.ID }/>
