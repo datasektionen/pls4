@@ -435,7 +435,7 @@ func login(admin *Admin, w http.ResponseWriter, r *http.Request) {
 		MaxAge:   60 * 60,
 		Secure:   false,
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
