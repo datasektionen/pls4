@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -328,7 +329,7 @@ func (s *Admin) RemoveMember(
 
 func (s *Admin) CreateRole(
 	ctx context.Context,
-	kthID, id, displayName, description string,
+	kthID, id, displayName, description, ownerID string,
 ) error {
 	if ok, err := s.MayCreateRoles(ctx, kthID); err != nil {
 		return err
@@ -336,11 +337,29 @@ func (s *Admin) CreateRole(
 		// TODO: return an error
 		return nil
 	}
-	_, err := s.db.ExecContext(ctx, `
+	if roles, err := s.GetUserRoles(ctx, kthID); err != nil {
+		return err
+	} else if !slices.ContainsFunc(roles, func(role models.Role) bool { return role.ID == ownerID }) {
+		return errors.New("The user does not have the role " + ownerID + ".")
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	defer tx.Rollback()
+	if err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`
 		insert into roles (id, display_name, description)
 		values ($1, $2, $3)
-	`, id, displayName, description)
-	return err
+	`, id, displayName, description); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`
+		insert into roles_permissions (role_id, system, permission)
+		values ($1, 'pls', $2)
+	`, ownerID, "role-"+id); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 var tableRexeg = regexp.MustCompile(`on table "roles_(.*)"$`)
@@ -359,12 +378,12 @@ func (s *Admin) DeleteRole(
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
 	_, err = tx.Exec(`
 		delete from roles_roles
 		where subrole_id = $1
 	`, id)
 	if err != nil {
-		_ = tx.Rollback()
 		return err
 	}
 	_, err = tx.Exec(`
@@ -375,12 +394,10 @@ func (s *Admin) DeleteRole(
 		match := tableRexeg.FindStringSubmatch(err.Error())
 		if len(match) > 1 {
 			table := match[1]
-			_ = tx.Rollback()
 			return errors.New("This role still has " + table + " connected. They must be removed first.")
 		}
 	}
 	if err != nil {
-		_ = tx.Rollback()
 		return err
 	}
 	return tx.Commit()
@@ -405,4 +422,37 @@ func (s *Admin) RemovePermission(
 		and permission = $3
 	`, roleID, system, permission)
 	return err
+}
+
+func (s *Admin) GetUserRoles(
+	ctx context.Context,
+	kthID string,
+) ([]models.Role, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		with recursive all_roles (role_id) as (
+			select role_id from roles_users
+			where kth_id = $1 and now() between start_date and end_date
+			union
+			select superrole_id from all_roles
+			inner join roles_roles
+				on subrole_id = role_id
+		)
+		select r.id, r.display_name
+		from all_roles a
+		inner join roles r on a.role_id = r.id
+	`, kthID)
+	if err != nil {
+		return nil, err
+	}
+	var roles []models.Role
+	for rows.Next() {
+		var role models.Role
+		if err := rows.Scan(
+			&role.ID, &role.DisplayName,
+		); err != nil {
+			return nil, err
+		}
+		roles = append(roles, role)
+	}
+	return roles, nil
 }

@@ -48,14 +48,32 @@ templ Roles(roles []models.Role, mayCreate, mayDelete bool) {
 	}
 }
 
-templ CreateRoleForm() {
-	<form hx-post="/roles" class="flex gap-2 flex-justify p-4 pt-0" hx-target="main" hx-swap="innerHTML">
-		<label for="id">ID:</label>
-		<input class="border-b border-black" type="text" id="id" name="id"/>
-		<label class="ml-auto" for="display-name">Display name:</label>
-		<input class="border-b border-black" type="text" id="display-name" name="display-name"/>
-		<label class="ml-auto" for="discription">Description:</label>
-		<input class="border-b border-black" type="text" id="description" name="description"/>
-		<input type="submit" name="action" value="Create" class="bg-blue-300 px-2 rounded-md"/>
+templ CreateRoleForm(roles []models.Role) {
+	<form hx-post="/roles" class="flex gap-2 flex-col p-4 pt-0 flex-wrap" hx-target="main" hx-swap="innerHTML">
+		<h3 class="text-xl font-bold">Create role</h3>
+		<div>
+			<label for="id">ID:</label>
+			<input class="border-b border-black" type="text" id="id" name="id" pattern="[a-z]+(-[a-z]+)*" required/>
+			<label for="display-name">Display name:</label>
+			<input class="border-b border-black" type="text" id="display-name" name="display-name" required/>
+		</div>
+		<div>
+			<label for="discription">Description:</label>
+			<br/>
+			<textarea class="border-b border-black" id="description" name="description"></textarea>
+		</div>
+		<div>
+			<label for="owner">Managed by:</label>
+			<select name="owner" id="owner" class="p-2">
+				for _, role := range roles {
+					<option value={ role.ID }>{ role.DisplayName }</option>
+				}
+				<option>(none)</option>
+			</select>
+			<p class="text-gray-600">This role will get permission to manage the created role</p>
+		</div>
+		<div class="flex justify-center">
+			<input type="submit" name="action" value="Create" class="bg-blue-300 px-4 p-2 rounded-md"/>
+		</div>
 	</form>
 }

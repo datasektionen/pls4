@@ -138,7 +138,18 @@ func role(admin *Admin, w http.ResponseWriter, r *http.Request) templ.Component 
 }
 
 func createRoleForm(admin *Admin, w http.ResponseWriter, r *http.Request) templ.Component {
-	return t.CreateRoleForm()
+	session, err := admin.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	roles, err := admin.GetUserRoles(r.Context(), session.KTHID)
+	if err != nil {
+		slog.Error("Could not get roles for user", "error", err, "kth_id", session.KTHID)
+		return t.Error(http.StatusInternalServerError)
+	}
+	return t.CreateRoleForm(roles)
 }
 
 func roles(admin *Admin, w http.ResponseWriter, r *http.Request) templ.Component {
@@ -155,7 +166,8 @@ func roles(admin *Admin, w http.ResponseWriter, r *http.Request) templ.Component
 	if action == "Create" {
 		displayName := r.FormValue("display-name")
 		description := r.FormValue("description")
-		if err := admin.CreateRole(ctx, session.KTHID, id, displayName, description); err != nil {
+		owner := r.FormValue("owner")
+		if err := admin.CreateRole(ctx, session.KTHID, id, displayName, description, owner); err != nil {
 			slog.Error("Could not create role", "error", err, "role_id", id)
 			return t.Error(http.StatusInternalServerError)
 		}
