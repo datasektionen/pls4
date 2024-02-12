@@ -16,14 +16,18 @@ import (
 )
 
 func main() {
-	var address, loginURL, loginAPIKey, hodisURL, databaseURL string
+	var address, loginFrontendURL, loginAPIURL, loginAPIKey, hodisURL, databaseURL string
 	flag.StringVar(&address, "address",
 		envOr("ADDRESS", "0.0.0.0:3000"),
 		"The address to listen to requests on",
 	)
-	flag.StringVar(&loginURL, "login-url",
-		os.Getenv("LOGIN_URL"),
-		"URL to login",
+	flag.StringVar(&loginFrontendURL, "login-frontend-url",
+		os.Getenv("LOGIN_FRONTEND_URL"),
+		"URL to login frontend",
+	)
+	flag.StringVar(&loginAPIURL, "login-api-url",
+		os.Getenv("LOGIN_API_URL"),
+		"URL to login api",
 	)
 	flag.StringVar(&loginAPIKey, "login-api-key",
 		os.Getenv("LOGIN_API_KEY"),
@@ -51,7 +55,7 @@ func main() {
 	}
 
 	apiService := api.New(db)
-	adminService, err := admin.New(db, apiService, loginURL, loginAPIKey, hodisURL)
+	adminService, err := admin.New(db, apiService, loginFrontendURL, loginAPIURL, loginAPIKey, hodisURL)
 	if err != nil {
 		panic(err)
 	}

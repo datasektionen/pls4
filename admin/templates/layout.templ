@@ -1,17 +1,17 @@
 package templates
 
-script methone(userID, loginURL string) {
+script methone(userID, loginFrontendURL string) {
 	window.methone_conf = {
 		system_name: "pls",
 		color_scheme: "purple",
 		login_text: userID ? userID : "Login",
-		login_href: userID ? "/logout" : loginURL
+		login_href: userID ? "/logout" : loginFrontendURL
 			+ "/login?callback="
 			+ encodeURIComponent(window.location.origin + "/login?code="),
 	};
 }
 
-templ Layout(userID, loginURL string) {
+templ Layout(userID, loginFrontendURL string) {
 	<!DOCTYPE html>
 	<html lang="sv">
 		<head>
@@ -19,7 +19,7 @@ templ Layout(userID, loginURL string) {
 			<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>pls - fourth* time's the charm</title>
-			@methone(userID, loginURL)
+			@methone(userID, loginFrontendURL)
 			<script defer src="https://methone.datasektionen.se/bar.js"></script>
 			<script src="https://cdn.tailwindcss.com"></script>
 			<script src="https://unpkg.com/htmx.org@1.9.5"></script>

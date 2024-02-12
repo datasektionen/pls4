@@ -27,7 +27,7 @@ func (s *Admin) deleteOldSessionsForever() {
 }
 
 func (s *Admin) Login(code string) (string, error) {
-	res, err := http.Get(s.loginURL + "/verify/" + code + "?api_key=" + s.loginAPIKey)
+	res, err := http.Get(s.loginAPIURL + "/verify/" + code + "?api_key=" + s.loginAPIKey)
 	if err != nil {
 		return "", err
 	}

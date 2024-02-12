@@ -7,18 +7,20 @@ import (
 )
 
 type Admin struct {
-	db          *sql.DB
-	api         *api.API
-	loginURL    string
-	loginAPIKey string
-	hodisURL    string
+	db               *sql.DB
+	api              *api.API
+	loginFrontendURL string
+	loginAPIURL      string
+	loginAPIKey      string
+	hodisURL         string
 }
 
-func New(db *sql.DB, api *api.API, loginURL, loginAPIKey, hodisURL string) (*Admin, error) {
+func New(db *sql.DB, api *api.API, loginFrontendURL, loginAPIURL, loginAPIKey, hodisURL string) (*Admin, error) {
 	s := &Admin{}
 
 	s.api = api
-	s.loginURL = loginURL
+	s.loginFrontendURL = loginFrontendURL
+	s.loginAPIURL = loginAPIURL
 	s.loginAPIKey = loginAPIKey
 	s.hodisURL = hodisURL
 

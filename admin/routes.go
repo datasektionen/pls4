@@ -46,7 +46,7 @@ func page(admin *Admin, handler func(s *Admin, w http.ResponseWriter, r *http.Re
 		layout := t.Body()
 		if r.Header.Get("HX-Boosted") != "true" {
 			session, _ := admin.GetSession(r)
-			layout = t.Layout(session.DisplayName, admin.loginURL)
+			layout = t.Layout(session.DisplayName, admin.loginFrontendURL)
 		}
 		err = layout.Render(templ.WithChildren(r.Context(), component), w)
 		if err != nil {
