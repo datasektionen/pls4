@@ -42,26 +42,28 @@ templ Permissions(
 				}
 			}
 		}
-		<form
-			class="flex items-stretch gap-3 col-span-full"
-			hx-post={ "/role/" + roleID + "/permission" }
-			hx-target="#permissions"
-		>
-			<input
-				type="text"
-				class="border rounded-md"
-				list="addable-systems"
-				required
-				name="system"
-				autocomplete="off"
-			/>
-			<datalist id="addable-systems">
-				for system := range mayAddInSystems {
-					<option>{ system }</option>
-				}
-			</datalist>
-			<input type="text" class="border rounded-md" required name="permission"/>
-			<button class="bg-slate-300 w-8 h-8">+</button>
-		</form>
+		if len(mayAddInSystems) > 0 {
+			<form
+				class="flex items-stretch gap-3 col-span-full"
+				hx-post={ "/role/" + roleID + "/permission" }
+				hx-target="#permissions"
+			>
+				<input
+					type="text"
+					class="border rounded-md"
+					list="addable-systems"
+					required
+					name="system"
+					autocomplete="off"
+				/>
+				<datalist id="addable-systems">
+					for system := range mayAddInSystems {
+						<option>{ system }</option>
+					}
+				</datalist>
+				<input type="text" class="border rounded-md" required name="permission"/>
+				<button class="bg-slate-300 w-8 h-8">+</button>
+			</form>
+		}
 	</section>
 }
