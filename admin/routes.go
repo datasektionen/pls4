@@ -51,6 +51,8 @@ func route(admin *Admin, handler func(s *Admin, w http.ResponseWriter, r *http.R
 
 func page(admin *Admin, handler func(s *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "text/html; charset=utf-8")
+
 		ctx := r.Context()
 		component := handler(admin, ctx, w, r)
 		var err error
@@ -72,6 +74,8 @@ func page(admin *Admin, handler func(s *Admin, ctx context.Context, w http.Respo
 
 func partial(admin *Admin, handler func(s *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "text/html; charset=utf-8")
+
 		ctx := r.Context()
 		c := handler(admin, ctx, w, r)
 		if e, ok := c.(t.ErrorComponent); ok {
