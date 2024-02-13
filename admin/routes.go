@@ -199,12 +199,12 @@ func createRole(admin *Admin, ctx context.Context, w http.ResponseWriter, r *htt
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	id := r.FormValue("id")
+	roleID := r.FormValue("id")
 	displayName := r.FormValue("display-name")
 	description := r.FormValue("description")
 	owner := r.FormValue("owner")
-	if err := admin.CreateRole(ctx, session.KTHID, id, displayName, description, owner); err != nil {
-		slog.Error("Could not create role", "error", err, "role_id", id)
+	if err := admin.CreateRole(ctx, session.KTHID, roleID, displayName, description, owner); err != nil {
+		slog.Error("Could not create role", "error", err, "role_id", roleID)
 		return t.Error(http.StatusInternalServerError)
 	}
 
@@ -218,9 +218,9 @@ func deleteRole(admin *Admin, ctx context.Context, w http.ResponseWriter, r *htt
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	id := r.PathValue("id")
-	if err := admin.DeleteRole(ctx, session.KTHID, id); err != nil {
-		slog.Error("Could not delete role", "error", err, "role_id", id)
+	roleID := r.PathValue("id")
+	if err := admin.DeleteRole(ctx, session.KTHID, roleID); err != nil {
+		slog.Error("Could not delete role", "error", err, "role_id", roleID)
 		return t.Error(http.StatusInternalServerError)
 	}
 
@@ -349,7 +349,7 @@ func renderSubroles(admin *Admin, ctx context.Context, session Session, roleID s
 }
 
 func getRoleMembers(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	id := r.PathValue("id")
+	roleID := r.PathValue("id")
 	toUpdateMember, _ := uuid.Parse(r.FormValue("updateMemberID"))
 	addNew := r.Form.Has("new")
 
@@ -359,18 +359,19 @@ func getRoleMembers(admin *Admin, ctx context.Context, w http.ResponseWriter, r 
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, id)
+	members, err := admin.GetRoleMembers(ctx, roleID, true, true)
 	if err != nil {
-		slog.Error("Could not check if role may be updated", "error", err, "role_id", id)
+		slog.Error("Could not get members", "error", err, "role_id", roleID)
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	members, err := admin.GetRoleMembers(ctx, id, true, true)
+	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, roleID)
 	if err != nil {
-		slog.Error("Could not list roles", "error", err)
+		slog.Error("Could not check if role may be updated", "error", err, "role_id", roleID)
 		return t.Error(http.StatusInternalServerError)
 	}
-	return t.Members(id, members, mayUpdate, toUpdateMember, addNew)
+
+	return t.Members(roleID, members, mayUpdate, toUpdateMember, addNew)
 }
 
 func roleAddMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
@@ -398,19 +399,7 @@ func roleAddMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	members, err := admin.GetRoleMembers(ctx, roleID, true, true)
-	if err != nil {
-		slog.Error("Could not get members", "error", err, "role_id", roleID)
-		return t.Error(http.StatusInternalServerError)
-	}
-
-	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, roleID)
-	if err != nil {
-		slog.Error("Could not check if role may be updated", "error", err, "role_id", roleID)
-		return t.Error(http.StatusInternalServerError)
-	}
-
-	return t.Members(roleID, members, mayUpdate, uuid.Nil, false)
+	return renderMembers(admin, ctx, session, roleID)
 }
 
 func roleUpdateMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
@@ -440,19 +429,7 @@ func roleUpdateMember(admin *Admin, ctx context.Context, w http.ResponseWriter, 
 		return t.Error(http.StatusInternalServerError)
 	}
 
-	members, err := admin.GetRoleMembers(ctx, roleID, true, true)
-	if err != nil {
-		slog.Error("Could not get members", "error", err, "role_id", roleID)
-		return t.Error(http.StatusInternalServerError)
-	}
-
-	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, roleID)
-	if err != nil {
-		slog.Error("Could not check if role may be updated", "error", err, "role_id", roleID)
-		return t.Error(http.StatusInternalServerError)
-	}
-
-	return t.Members(roleID, members, mayUpdate, uuid.Nil, false)
+	return renderMembers(admin, ctx, session, roleID)
 }
 
 func roleEndMember(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
