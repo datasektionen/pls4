@@ -468,6 +468,22 @@ func roleRemoveMember(admin *Admin, ctx context.Context, w http.ResponseWriter, 
 	return renderMembers(admin, ctx, session, roleID)
 }
 
+func renderMembers(admin *Admin, ctx context.Context, session Session, roleID string) templ.Component {
+	members, err := admin.GetRoleMembers(ctx, roleID, true, true)
+	if err != nil {
+		slog.Error("Could not get members", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, roleID)
+	if err != nil {
+		slog.Error("Could not check if role may be updated", "error", err, "role_id", roleID)
+		return t.Error(http.StatusInternalServerError)
+	}
+
+	return t.Members(roleID, members, mayUpdate, uuid.Nil, false)
+}
+
 func roleAddPermission(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	session, err := admin.GetSession(r)
 	if err != nil {
@@ -485,22 +501,6 @@ func roleAddPermission(admin *Admin, ctx context.Context, w http.ResponseWriter,
 	}
 
 	return renderPermissions(admin, ctx, session, roleID)
-}
-
-func renderMembers(admin *Admin, ctx context.Context, session Session, roleID string) templ.Component {
-	members, err := admin.GetRoleMembers(ctx, roleID, true, true)
-	if err != nil {
-		slog.Error("Could not get members", "error", err, "role_id", roleID)
-		return t.Error(http.StatusInternalServerError)
-	}
-
-	mayUpdate, err := admin.MayUpdateRole(ctx, session.KTHID, roleID)
-	if err != nil {
-		slog.Error("Could not check if role may be updated", "error", err, "role_id", roleID)
-		return t.Error(http.StatusInternalServerError)
-	}
-
-	return t.Members(roleID, members, mayUpdate, uuid.Nil, false)
 }
 
 func roleRemovePermission(admin *Admin, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
