@@ -47,7 +47,14 @@ templ Permissions(
 			hx-post={ "/role/" + roleID + "/permission" }
 			hx-target="#permissions"
 		>
-			<input type="text" class="border rounded-md" list="addable-systems" required name="system"/>
+			<input
+				type="text"
+				class="border rounded-md"
+				list="addable-systems"
+				required
+				name="system"
+				autocomplete="off"
+			/>
 			<datalist id="addable-systems">
 				for system := range mayAddInSystems {
 					<option>{ system }</option>
