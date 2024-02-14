@@ -4,7 +4,7 @@ Download a go compiler, at least version 1.22
 
 Download the correct version of [templ](https://templ.guide/) using:
 ```sh
-go install github.com/a-h/templ/cmd/templ@$(grep 'github.com/a-h/templ' go.sum | head -1 | awk '{print $2}')
+go install github.com/a-h/templ/cmd/templ@$(grep -oPm1 'github.com/a-h/templ \K[^ ]*' go.sum)
 ```
 
 ## Setup a database
