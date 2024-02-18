@@ -23,7 +23,13 @@ type Member struct {
 	EndDate    time.Time
 }
 
-type SystemPermissions struct {
+type SystemPermissionInstances struct {
 	System      string
-	Permissions []string
+	Permissions []PermissionInstance
+}
+
+type PermissionInstance struct {
+	ID           uuid.UUID
+	PermissionID string
+	Scope        string
 }

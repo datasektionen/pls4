@@ -2,7 +2,9 @@ package admin
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"log/slog"
 	"regexp"
 	"slices"
 	"strings"
@@ -13,7 +15,7 @@ import (
 )
 
 func (s *Admin) ListRoles(ctx context.Context) ([]models.Role, error) {
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := s.db.QueryContext(ctx, `--sql
 		select
 			r.id, r.display_name, r.description,
 			count(rr.subrole_id), count(ru.id)
@@ -42,7 +44,7 @@ func (s *Admin) ListRoles(ctx context.Context) ([]models.Role, error) {
 }
 
 func (s *Admin) GetRole(ctx context.Context, id string) (*models.Role, error) {
-	rows := s.db.QueryRowContext(ctx, `
+	rows := s.db.QueryRowContext(ctx, `--sql
 		select
 			r.id, r.display_name, r.description,
 			count(rr.subrole_id), count(ru.id)
@@ -61,7 +63,7 @@ func (s *Admin) GetRole(ctx context.Context, id string) (*models.Role, error) {
 }
 
 func (s *Admin) GetSubroles(ctx context.Context, id string) ([]models.Role, error) {
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := s.db.QueryContext(ctx, `--sql
 		select
 			r.id, r.display_name, r.description,
 			count(sub.subrole_id), count(ru.id)
@@ -90,15 +92,17 @@ func (s *Admin) GetSubroles(ctx context.Context, id string) ([]models.Role, erro
 }
 
 func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool, includeIndirect bool) ([]models.Member, error) {
-	query := `select
-		id, kth_id, modified_by,
-		modified_at, start_date, end_date
-	from roles_users
-	where role_id = $1
-	and ($2 or now() between start_date and end_date)
-	order by kth_id`
+	query := `--sql
+		select
+			id, kth_id, modified_by,
+			modified_at, start_date, end_date
+		from roles_users
+		where role_id = $1
+		and ($2 or now() between start_date and end_date)
+		order by kth_id
+	`
 	if includeIndirect {
-		query = `with recursive all_subroles (role_id) as (
+		query = `/*sql*/ with recursive all_subroles (role_id) as (
 				select subrole_id
 				from roles_roles
 				where superrole_id = $1
@@ -106,7 +110,7 @@ func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool,
 				select subrole_id from all_subroles
 				inner join roles_roles
 				on superrole_id = role_id
-		) (` + query + `) union all
+		) (` + query + `/*sql*/) union all
 		(select
 			null as id, kth_id, '' as modified_by,
 			max(modified_at), min(start_date), max(end_date)
@@ -135,31 +139,38 @@ func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool,
 	return members, nil
 }
 
-func (s *Admin) GetRolePermissions(ctx context.Context, id, kthID string) ([]models.SystemPermissions, error) {
-	rows, err := s.db.QueryContext(ctx, `
-		select system, permission
+func (s *Admin) GetRolePermissions(ctx context.Context, id string) ([]models.SystemPermissionInstances, error) {
+	rows, err := s.db.QueryContext(ctx, `--sql
+		select id, system_id, permission_id, coalesce(scope, '')
 		from roles_permissions
+		inner join permission_instances
+			on id = permission_instance_id
 		where role_id = $1
-		order by system
+		order by system_id
 	`, id)
 	if err != nil {
 		return nil, err
 	}
-	perms := make([]models.SystemPermissions, 1)
+	perms := make([]models.SystemPermissionInstances, 1)
 	p := &perms[0]
 	for rows.Next() {
-		var system, permission string
-		if err := rows.Scan(&system, &permission); err != nil {
+		var id uuid.UUID
+		var system, permission, scope string
+		if err := rows.Scan(&id, &system, &permission, &scope); err != nil {
 			return nil, err
 		}
 		if p.System != system {
-			perms = append(perms, models.SystemPermissions{
+			perms = append(perms, models.SystemPermissionInstances{
 				System:      system,
-				Permissions: []string{},
+				Permissions: []models.PermissionInstance{},
 			})
 			p = &perms[len(perms)-1]
 		}
-		p.Permissions = append(p.Permissions, permission)
+		p.Permissions = append(p.Permissions, models.PermissionInstance{
+			ID:           id,
+			PermissionID: permission,
+			Scope:        scope,
+		})
 	}
 	return perms[1:], nil
 }
@@ -171,7 +182,7 @@ func (s *Admin) UpdateRole(ctx context.Context, kthID, roleID, displayName, desc
 		// TODO: return an error
 		return nil
 	}
-	res, err := s.db.ExecContext(ctx, `
+	res, err := s.db.ExecContext(ctx, `--sql
 		update roles
 		set
 			display_name = coalesce(nullif($2, ''), display_name),
@@ -198,7 +209,7 @@ func (s *Admin) AddSubrole(ctx context.Context, kthID, roleID, subroleID string)
 		// TODO: return an error
 		return nil
 	}
-	_, err := s.db.ExecContext(ctx, `
+	_, err := s.db.ExecContext(ctx, `--sql
 		insert into roles_roles (superrole_id, subrole_id)
 		values ($1, $2)
 	`, roleID, subroleID)
@@ -215,7 +226,7 @@ func (s *Admin) RemoveSubrole(ctx context.Context, kthID, roleID, subroleID stri
 		// TODO: return an error
 		return nil
 	}
-	res, err := s.db.ExecContext(ctx, `
+	res, err := s.db.ExecContext(ctx, `--sql
 		delete from roles_roles
 		where superrole_id = $1 and subrole_id = $2
 	`, roleID, subroleID)
@@ -245,7 +256,7 @@ func (s *Admin) UpdateMember(
 		// TODO: return an error
 		return nil
 	}
-	res, err := s.db.ExecContext(ctx, `
+	res, err := s.db.ExecContext(ctx, `--sql
 		update roles_users
 		set
 			start_date = case when $3 then $4 else start_date end,
@@ -277,7 +288,7 @@ func (s *Admin) AddMember(
 		// TODO: return an error
 		return nil
 	}
-	res, err := s.db.ExecContext(ctx, `
+	res, err := s.db.ExecContext(ctx, `--sql
 		insert into roles_users (role_id, kth_id, modified_by, start_date, end_date)
 		values ($1, $2, $3, $4, $5)
 	`, roleID, memberKTHID, kthID, startDate, endDate)
@@ -305,7 +316,7 @@ func (s *Admin) RemoveMember(
 		// TODO: return an error
 		return nil
 	}
-	res, err := s.db.ExecContext(ctx, `
+	res, err := s.db.ExecContext(ctx, `--sql
 		delete from roles_users
 		where role_id = $1 and id = $2
 	`, roleID, memberID)
@@ -338,20 +349,28 @@ func (s *Admin) CreateRole(
 		return errors.New("The user does not have the role " + ownerID + ".")
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
-	defer tx.Rollback()
 	if err != nil {
 		return err
 	}
-	if _, err := tx.Exec(`
+	defer tx.Rollback()
+	if _, err := tx.Exec(`--sql
 		insert into roles (id, display_name, description)
 		values ($1, $2, $3)
 	`, id, displayName, description); err != nil {
 		return err
 	}
-	if _, err := tx.Exec(`
-		insert into roles_permissions (role_id, system, permission)
-		values ($1, 'pls', $2)
-	`, ownerID, "role-"+id); err != nil {
+	var instanceID uuid.UUID
+	if err := tx.QueryRow(`--sql
+		insert into permission_instances (system_id, permission_id, scope)
+		values ('pls', 'role', $1)
+		returning id
+	`, id).Scan(&instanceID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`--sql
+		insert into roles_permissions (permission_instance_id, role_id)
+		values ($1, $2)
+	`, instanceID, ownerID); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -374,14 +393,14 @@ func (s *Admin) DeleteRole(
 		return err
 	}
 	defer tx.Rollback()
-	_, err = tx.Exec(`
+	_, err = tx.Exec(`--sql
 		delete from roles_roles
 		where subrole_id = $1
 	`, roleID)
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(`
+	_, err = tx.Exec(`--sql
 		delete from roles
 		where id = $1
 	`, roleID)
@@ -395,54 +414,123 @@ func (s *Admin) DeleteRole(
 	if err != nil {
 		return err
 	}
+	_, err = tx.Exec(`--sql
+		delete from permission_instances
+		where system_id = 'pls'
+		and permission_id = 'role'
+		and scope = $1
+	`, roleID)
+	if err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
 func (s *Admin) RemovePermission(
 	ctx context.Context,
-	kthID, roleID string,
-	system, permission string,
+	kthID string,
+	permissionInstanceID uuid.UUID,
 ) error {
-	if ok, err := s.MayUpdatePermissions(ctx, kthID, system); err != nil {
+	tx, err := s.db.BeginTx(ctx, nil)
+	defer tx.Rollback()
+	if err != nil {
+		return err
+	}
+	var system string
+	if row := tx.QueryRow(`--sql
+		select system_id
+		from permission_instances
+		where id = $1
+	`, permissionInstanceID); row.Err() != nil {
+		return row.Err()
+	} else if err := row.Scan(&system); err != nil {
+		return err
+	}
+	if ok, err := s.MayUpdatePermissionsInSystem(ctx, kthID, system); err != nil {
 		return err
 	} else if !ok {
 		// TODO: return an error
 		return nil
 	}
 
-	_, err := s.db.ExecContext(ctx, `
-		delete from roles_permissions
-		where role_id = $1
-		and system = $2
-		and permission = $3
-	`, roleID, system, permission)
-	return err
+	slog.InfoContext(ctx, "Removing permission", "id", permissionInstanceID, "system", system)
+
+	// TODO: this must cascade to delete from either roles_permissions or
+	// api_tokens_permissions
+	_, err = tx.Exec(`--sql
+		delete from permission_instances
+		where id = $1
+	`, permissionInstanceID)
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
-func (s *Admin) AddPermission(
+func (s *Admin) AddPermissionToRole(
 	ctx context.Context,
 	kthID, roleID string,
-	system, permission string,
+	system, permission, scope string,
 ) error {
-	if ok, err := s.MayUpdatePermissions(ctx, kthID, system); err != nil {
+	if ok, err := s.MayUpdatePermissionsInSystem(ctx, kthID, system); err != nil {
 		return err
 	} else if !ok {
 		// TODO: return an error
 		return nil
 	}
 
-	_, err := s.db.ExecContext(ctx, `
-		insert into roles_permissions (role_id, system, permission)
-		values ($1, $2, $3)
-	`, roleID, system, permission)
-	return err
+	tx, err := s.db.BeginTx(ctx, nil)
+	defer tx.Rollback()
+	if err != nil {
+		return err
+	}
+
+	id, err := createPermissionInstance(tx, system, permission, scope)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`--sql
+		insert into roles_permissions (permission_instance_id, role_id)
+		values ($1, $2)
+	`, id, roleID)
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func createPermissionInstance(
+	tx *sql.Tx,
+	system, permission, scope string,
+) (uuid.UUID, error) {
+	var hasScope bool
+	if err := tx.QueryRow(`--sql
+		select has_scope from permissions
+		where system_id = $1
+		and id = $2
+	`, system, permission).Scan(&hasScope); err != nil {
+		return uuid.Nil, err
+	}
+	if hasScope != (scope != "") {
+		return uuid.Nil, errors.New("Provided scope when there should be one or the other way around")
+	}
+	var id uuid.UUID
+	if err := tx.QueryRow(`--sql
+		insert into permission_instances (system_id, permission_id, scope)
+		values ($1, $2, nullif($3, ''))
+		returning id
+	`, system, permission, scope).Scan(&id); err != nil {
+		return uuid.Nil, err
+	}
+	return id, nil
 }
 
 func (s *Admin) GetUserRoles(
 	ctx context.Context,
 	kthID string,
 ) ([]models.Role, error) {
-	rows, err := s.db.QueryContext(ctx, `
+	rows, err := s.db.QueryContext(ctx, `--sql
 		with recursive all_roles (role_id) as (
 			select role_id from roles_users
 			where kth_id = $1 and now() between start_date and end_date
@@ -472,19 +560,61 @@ func (s *Admin) GetUserRoles(
 }
 
 func (s *Admin) GetAllSystems(ctx context.Context) ([]string, error) {
-	rows, err := s.db.QueryContext(ctx, `
-		select distinct system
-		from roles_permissions
-		union all (select system from api_tokens_permissions)
+	rows, err := s.db.QueryContext(ctx, `--sql
+		select id
+		from systems
 	`)
 	if err != nil {
 		return nil, err
 	}
 	var systems []string
 	for rows.Next() {
-		var system string
-		rows.Scan(&system)
-		systems = append(systems, system)
+		systems = append(systems, "")
+		rows.Scan(&systems[len(systems)-1])
 	}
 	return systems, nil
+}
+
+func (s *Admin) GetAllRoles(ctx context.Context) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, `--sql
+		select id
+		from roles
+	`)
+	if err != nil {
+		return nil, err
+	}
+	var roles []string
+	for rows.Next() {
+		roles = append(roles, "")
+		rows.Scan(&roles[len(roles)-1])
+	}
+	return roles, nil
+}
+
+func (s *Admin) GetPermissions(ctx context.Context, system string) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, `--sql
+		select id
+		from permissions
+		where system_id = $1
+	`, system)
+	if err != nil {
+		return nil, err
+	}
+	var permissions []string
+	for rows.Next() {
+		permissions = append(permissions, "")
+		rows.Scan(&permissions[len(permissions)-1])
+	}
+	return permissions, nil
+}
+
+func (s *Admin) PermissionHasScope(ctx context.Context, system, permission string) (bool, error) {
+	var hasScope bool
+	err := s.db.QueryRowContext(ctx, `--sql
+		select has_scope
+		from permissions
+		where system_id = $1
+		and id = $2
+	`, system, permission).Scan(&hasScope)
+	return hasScope, err
 }

@@ -11,28 +11,31 @@ templ _() {
 
 templ Permissions(
 	roleID string,
-	permissions []models.SystemPermissions,
-	mayAddInSystems, mayDeleteInSystems map[string]struct{},
+	permissions []models.SystemPermissionInstances,
+	mayAddPermissions bool,
+	mayDeleteInSystems map[string]struct{},
 ) {
 	<section
-		class={ "grid grid-cols-[auto_1fr" + ternary(len(mayDeleteInSystems) > 0, "_1fr", "") + "] gap-x-6 gap-y-2 items-center p-3" }
+		class={ "grid grid-cols-[auto_1fr_1fr" + ternary(len(mayDeleteInSystems) > 0, "_1fr", "") + "] gap-x-6 gap-y-2 items-center p-3" }
 		id="permissions"
 		hx-swap="outerHTML"
 	>
 		<p class="font-bold">System</p>
 		<p class="font-bold">Permission</p>
+		<p class="font-bold">Scope</p>
 		if len(mayDeleteInSystems) > 0 {
 			<p class="font-bold">Options</p>
 		}
-		for _, permission := range permissions {
+		for _, sysPerm := range permissions {
 			<hr class="col-span-full"/>
-			for _, perm := range permission.Permissions {
-				<p>{ permission.System }</p>
-				<p>{ perm }</p>
-				if _, ok := mayDeleteInSystems[permission.System]; ok {
+			for _, perm := range sysPerm.Permissions {
+				<p>{ sysPerm.System }</p>
+				<p>{ perm.PermissionID }</p>
+				<p>{ perm.Scope }</p>
+				if _, ok := mayDeleteInSystems[sysPerm.System]; ok {
 					<p>
 						<button
-							hx-delete={ "/role/" + roleID + "/permission/" + permission.System + ":" + perm }
+							hx-delete={ "/role/" + roleID + "/permission/" + perm.ID.String() }
 							class="text-red-800"
 							hx-target="#permissions"
 						>Remove</button>
@@ -42,28 +45,58 @@ templ Permissions(
 				}
 			}
 		}
-		if len(mayAddInSystems) > 0 {
-			<form
-				class="flex items-stretch gap-3 col-span-full"
-				hx-post={ "/role/" + roleID + "/permission" }
-				hx-target="#permissions"
-			>
-				<input
-					type="text"
-					class="border rounded-md"
-					list="addable-systems"
-					required
-					name="system"
-					autocomplete="off"
-				/>
-				<datalist id="addable-systems">
-					for system := range mayAddInSystems {
-						<option>{ system }</option>
-					}
-				</datalist>
-				<input type="text" class="border rounded-md" required name="permission"/>
-				<button class="bg-slate-300 w-8 h-8">+</button>
-			</form>
+		if mayAddPermissions {
+			@RoleAddPermissionButton(roleID)
 		}
 	</section>
+}
+
+templ RoleAddPermissionButton(roleID string) {
+	<section class="p-4 pt-0" hx-swap="outerHTML" hx-target="this">
+		<button class="bg-slate-300 w-8 h-8" hx-get={ "/role/" + roleID + "/add-permission-form" }>+</button>
+	</section>
+}
+
+templ RoleAddPermissionForm(roleID string, systems []string) {
+	<form hx-post={ "/role/" + roleID + "/permission" } class="col-span-full flex gap-2 p-4 pt-0" hx-target="#permissions">
+		<select
+			name="system"
+			class="p-2"
+			hx-trigger="change[target.value != '']"
+			hx-get={ "/permission-select" }
+			hx-target="#permission-select"
+			hx-swap="innerHTML"
+		>
+			<option>System</option>
+			for _, system := range systems {
+				<option value={ system }>{ system }</option>
+			}
+		</select>
+		<div class="flex gap-2" id="permission-select"></div>
+	</form>
+}
+
+templ PermissionSelect(permissions []string) {
+	<select
+		name="permission"
+		class="p-2"
+		hx-trigger="change[target.value != '']"
+		hx-get={ "/scope-input" }
+		hx-target="#scope-input"
+		hx-swap="innerHTML"
+		hx-include="closest form"
+	>
+		<option>Permission</option>
+		for _, permission := range permissions {
+			<option value={ permission }>{ permission }</option>
+		}
+	</select>
+	<div class="flex gap-2" id="scope-input"></div>
+}
+
+templ ScopeInput(hasScope bool) {
+	if hasScope {
+		<input name="scope" type="string" required/>
+	}
+	<button>Add</button>
 }
