@@ -17,7 +17,7 @@ func (ui *UI) GetRolePermissions(ctx context.Context, id string) ([]models.Syste
 		inner join permission_instances
 			on id = permission_instance_id
 		where role_id = $1
-		order by system_id
+		order by system_id, permission_id
 	`, id)
 	if err != nil {
 		return nil, err
