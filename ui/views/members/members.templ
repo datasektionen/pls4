@@ -1,14 +1,15 @@
-package views
+package members
 
 import (
 	"github.com/datasektionen/pls4/models"
 	"github.com/google/uuid"
 	"time"
+	"github.com/datasektionen/pls4/ui/util"
 )
 
 templ Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMemberID uuid.UUID, addNew bool) {
 	<section
-		class={ "grid grid-cols-[repeat(" + ternary(mayUpdate, "3", "2") + ",auto)] gap-2 items-center p-3" }
+		class={ "grid grid-cols-[repeat(" + util.Ternary(mayUpdate, "3", "2") + ",auto)] gap-2 items-center p-3" }
 		hx-swap="outerHTML"
 		hx-target="this"
 	>

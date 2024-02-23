@@ -1,7 +1,8 @@
-package views
+package permissions
 
 import (
 	"github.com/datasektionen/pls4/models"
+	"github.com/datasektionen/pls4/ui/util"
 )
 
 // TODO: remove this whenever possible. I got a weird error during generation from the Permissions
@@ -16,7 +17,7 @@ templ Permissions(
 	mayDeleteInSystems map[string]struct{},
 ) {
 	<section
-		class={ "grid grid-cols-[auto_1fr_1fr" + ternary(len(mayDeleteInSystems) > 0, "_1fr", "") + "] gap-x-6 gap-y-2 items-center p-3" }
+		class={ "grid grid-cols-[auto_1fr_1fr" + util.Ternary(len(mayDeleteInSystems) > 0, "_1fr", "") + "] gap-x-6 gap-y-2 items-center p-3" }
 		id="permissions"
 		hx-swap="outerHTML"
 	>
@@ -46,18 +47,18 @@ templ Permissions(
 			}
 		}
 		if mayAddPermissions {
-			@RoleAddPermissionButton(roleID)
+			@roleAddPermissionButton(roleID)
 		}
 	</section>
 }
 
-templ RoleAddPermissionButton(roleID string) {
+templ roleAddPermissionButton(roleID string) {
 	<section class="p-4 pt-0" hx-swap="outerHTML" hx-target="this">
 		<button class="bg-slate-300 w-8 h-8" hx-get={ "/role/" + roleID + "/add-permission-form" }>+</button>
 	</section>
 }
 
-templ RoleAddPermissionForm(roleID string, systems []string) {
+templ roleAddPermissionForm(roleID string, systems []string) {
 	<form hx-post={ "/role/" + roleID + "/permission" } class="col-span-full flex gap-2 p-4 pt-0" hx-target="#permissions">
 		<select
 			name="system"
@@ -76,7 +77,7 @@ templ RoleAddPermissionForm(roleID string, systems []string) {
 	</form>
 }
 
-templ PermissionSelect(permissions []string) {
+templ permissionSelect(permissions []string) {
 	<select
 		name="permission"
 		class="p-2"
@@ -94,7 +95,7 @@ templ PermissionSelect(permissions []string) {
 	<div class="flex gap-2" id="scope-input"></div>
 }
 
-templ ScopeInput(hasScope bool) {
+templ scopeInput(hasScope bool) {
 	if hasScope {
 		<input name="scope" type="string" required/>
 	}

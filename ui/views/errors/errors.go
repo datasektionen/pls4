@@ -1,4 +1,4 @@
-package views
+package errors
 
 import (
 	"github.com/a-h/templ"

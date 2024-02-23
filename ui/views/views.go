@@ -7,39 +7,44 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/datasektionen/pls4/ui/service"
+	"github.com/datasektionen/pls4/ui/views/errors"
+	"github.com/datasektionen/pls4/ui/views/members"
+	"github.com/datasektionen/pls4/ui/views/permissions"
+	"github.com/datasektionen/pls4/ui/views/roles"
+	"github.com/datasektionen/pls4/ui/views/subroles"
 )
 
 //go:generate templ generate
 
 func Mount(ui *service.UI) {
-	http.Handle("/{$}", page(ui, index))
+	http.Handle("/{$}", page(ui, roles.Index))
 
-	http.Handle("GET /role/{id}", page(ui, getRole))
-	http.Handle("GET /role", partial(ui, createRoleForm))
-	http.Handle("POST /role", partial(ui, createRole))
-	http.Handle("DELETE /role/{id}", partial(ui, deleteRole))
+	http.Handle("GET /role/{id}", page(ui, roles.GetRole))
+	http.Handle("GET /role", partial(ui, roles.CreateRoleForm))
+	http.Handle("POST /role", partial(ui, roles.CreateRole))
+	http.Handle("DELETE /role/{id}", partial(ui, roles.DeleteRole))
 
-	http.Handle("GET /role/{id}/name", partial(ui, roleNameForm))
-	http.Handle("POST /role/{id}/name", partial(ui, updateRoleName))
+	http.Handle("GET /role/{id}/name", partial(ui, roles.RoleNameForm))
+	http.Handle("POST /role/{id}/name", partial(ui, roles.UpdateRoleName))
 
-	http.Handle("GET /role/{id}/description", partial(ui, roleDescriptionForm))
-	http.Handle("POST /role/{id}/description", partial(ui, updateRoleDescription))
+	http.Handle("GET /role/{id}/description", partial(ui, roles.RoleDescriptionForm))
+	http.Handle("POST /role/{id}/description", partial(ui, roles.UpdateRoleDescription))
 
-	http.Handle("GET /role/{id}/subrole", partial(ui, roleSubroleForm))
-	http.Handle("POST /role/{id}/subrole", partial(ui, roleAddSubrole))
-	http.Handle("DELETE /role/{id}/subrole/{subroleID}", partial(ui, roleRemoveSubrole))
+	http.Handle("GET /role/{id}/subrole", partial(ui, subroles.RoleSubroleForm))
+	http.Handle("POST /role/{id}/subrole", partial(ui, subroles.RoleAddSubrole))
+	http.Handle("DELETE /role/{id}/subrole/{subroleID}", partial(ui, subroles.RoleRemoveSubrole))
 
-	http.Handle("GET /role/{id}/member", partial(ui, getRoleMembers))
-	http.Handle("POST /role/{id}/member", partial(ui, roleAddMember))
-	http.Handle("POST /role/{id}/member/{memberID}", partial(ui, roleUpdateMember))
-	http.Handle("POST /role/{id}/member/{memberID}/end", partial(ui, roleEndMember))
-	http.Handle("DELETE /role/{id}/member/{memberID}", partial(ui, roleRemoveMember))
+	http.Handle("GET /role/{id}/member", partial(ui, members.GetRoleMembers))
+	http.Handle("POST /role/{id}/member", partial(ui, members.RoleAddMember))
+	http.Handle("POST /role/{id}/member/{memberID}", partial(ui, members.RoleUpdateMember))
+	http.Handle("POST /role/{id}/member/{memberID}/end", partial(ui, members.RoleEndMember))
+	http.Handle("DELETE /role/{id}/member/{memberID}", partial(ui, members.RoleRemoveMember))
 
-	http.Handle("POST /role/{id}/permission", partial(ui, roleAddPermission))
-	http.Handle("DELETE /role/{id}/permission/{instanceID}", partial(ui, roleRemovePermission))
-	http.Handle("GET /role/{id}/add-permission-form", partial(ui, addPermissionForm))
-	http.Handle("GET /permission-select", partial(ui, permissionSelect))
-	http.Handle("GET /scope-input", partial(ui, scopeInput))
+	http.Handle("POST /role/{id}/permission", partial(ui, permissions.RoleAddPermission))
+	http.Handle("DELETE /role/{id}/permission/{instanceID}", partial(ui, permissions.RoleRemovePermission))
+	http.Handle("GET /role/{id}/add-permission-form", partial(ui, permissions.AddPermissionForm))
+	http.Handle("GET /permission-select", partial(ui, permissions.PermissionSelect))
+	http.Handle("GET /scope-input", partial(ui, permissions.ScopeInput))
 
 	http.Handle("/login", route(ui, login))
 	http.Handle("/logout", route(ui, logout))
@@ -58,13 +63,13 @@ func page(ui *service.UI, handler func(s *service.UI, ctx context.Context, w htt
 		ctx := r.Context()
 		component := handler(ui, ctx, w, r)
 		var err error
-		if e, ok := component.(ErrorComponent); ok {
+		if e, ok := component.(errors.ErrorComponent); ok {
 			w.WriteHeader(e.Code)
 		}
-		layout := Body()
+		layout := body()
 		if r.Header.Get("HX-Boosted") != "true" {
 			session, _ := ui.GetSession(r)
-			layout = Layout(session.DisplayName, ui.LoginFrontendURL())
+			layout = document(session.DisplayName, ui.LoginFrontendURL())
 		}
 		err = layout.Render(templ.WithChildren(ctx, component), w)
 		if err != nil {
@@ -80,7 +85,7 @@ func partial(ui *service.UI, handler func(s *service.UI, ctx context.Context, w 
 
 		ctx := r.Context()
 		c := handler(ui, ctx, w, r)
-		if e, ok := c.(ErrorComponent); ok {
+		if e, ok := c.(errors.ErrorComponent); ok {
 			w.WriteHeader(e.Code)
 		}
 		if err := c.Render(ctx, w); err != nil {
@@ -119,19 +124,4 @@ func logout(ui *service.UI, w http.ResponseWriter, r *http.Request) {
 		MaxAge: -1,
 	})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
-func plural(count int) string {
-	if count == 1 {
-		return ""
-	}
-	return "s"
-}
-
-func ternary[T any](condition bool, then T, elze T) T {
-	if condition {
-		return then
-	} else {
-		return elze
-	}
 }

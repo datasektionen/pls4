@@ -1,15 +1,19 @@
-package views
+package roles
 
 import (
 	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/datasektionen/pls4/models"
+	"github.com/datasektionen/pls4/ui/views/permissions"
+	"github.com/datasektionen/pls4/ui/views/subroles"
+	"github.com/datasektionen/pls4/ui/views/members"
+	"github.com/datasektionen/pls4/ui/util"
 )
 
-templ Roles(roles []models.Role, mayCreate bool, deletable map[string]struct{}) {
+templ roleList(roles []models.Role, mayCreate bool, deletable map[string]struct{}) {
 	<h2 class="text-2xl font-bold">Roles</h2>
-	<section class={ "grid grid-cols-[repeat(" + ternary(len(deletable) > 0, "4", "3") + ",auto)] gap-2 items-center p-4" }>
+	<section class={ "grid grid-cols-[repeat(" + util.Ternary(len(deletable) > 0, "4", "3") + ",auto)] gap-2 items-center p-4" }>
 		<p class="font-bold">Name</p>
 		<p class="font-bold">Members</p>
 		<p class="font-bold">Description</p>
@@ -21,10 +25,10 @@ templ Roles(roles []models.Role, mayCreate bool, deletable map[string]struct{}) 
 			<a href={ templ.URL("/role/" + role.ID) }>{ role.DisplayName }</a>
 			<span>
 				if role.SubroleCount > 0 {
-					<p>{ strconv.Itoa(role.SubroleCount) } sub-role{ plural(role.SubroleCount) }</p>
+					<p>{ strconv.Itoa(role.SubroleCount) } sub-role{ util.Plural(role.SubroleCount) }</p>
 				}
 				if role.MemberCount > 0 {
-					<p>{ strconv.Itoa(role.MemberCount) } member{ plural(role.SubroleCount) }</p>
+					<p>{ strconv.Itoa(role.MemberCount) } member{ util.Plural(role.SubroleCount) }</p>
 				}
 			</span>
 			<span>{ role.Description }</span>
@@ -48,7 +52,7 @@ templ Roles(roles []models.Role, mayCreate bool, deletable map[string]struct{}) 
 	}
 }
 
-templ CreateRoleForm(roles []models.Role) {
+templ createRoleForm(roles []models.Role) {
 	<form hx-post="/role" class="flex gap-2 flex-col p-4 pt-0 flex-wrap" hx-target="main" hx-swap="innerHTML">
 		<h3 class="text-xl font-bold">Create role</h3>
 		<div>
@@ -85,7 +89,7 @@ templ CreateRoleForm(roles []models.Role) {
 	</form>
 }
 
-templ RoleNameDisplay(roleID string, displayName string, mayUpdate bool) {
+templ roleNameDisplay(roleID string, displayName string, mayUpdate bool) {
 	<h1
 		class="text-3xl font-bold"
 		if mayUpdate {
@@ -100,7 +104,7 @@ templ RoleNameDisplay(roleID string, displayName string, mayUpdate bool) {
 	</h1>
 }
 
-templ RoleNameForm(role models.Role) {
+templ roleNameForm(role models.Role) {
 	<form
 		class="text-3xl"
 		hx-post={ "/role/" + role.ID + "/name" }
@@ -111,7 +115,7 @@ templ RoleNameForm(role models.Role) {
 	</form>
 }
 
-templ RoleDescriptionDisplay(roleID string, description string, mayUpdate bool) {
+templ roleDescriptionDisplay(roleID string, description string, mayUpdate bool) {
 	<p
 		class="p-2"
 		if mayUpdate {
@@ -126,7 +130,7 @@ templ RoleDescriptionDisplay(roleID string, description string, mayUpdate bool) 
 	</p>
 }
 
-templ RoleDescriptionForm(role models.Role) {
+templ roleDescriptionForm(role models.Role) {
 	<form
 		hx-post={ "/role/" + role.ID + "/description" }
 		hx-swap="outerHTML"
@@ -136,20 +140,20 @@ templ RoleDescriptionForm(role models.Role) {
 	</form>
 }
 
-templ Role(
+templ roleComponent(
 	role models.Role,
-	subroles []models.Role,
-	members []models.Member,
-	permissions []models.SystemPermissionInstances,
+	sr []models.Role,
+	m []models.Member,
+	perms []models.SystemPermissionInstances,
 	mayUpdate, mayAddPermissions bool,
 	mayDeleteInSystems map[string]struct{},
 ) {
-	@RoleNameDisplay(role.ID, role.DisplayName, mayUpdate)
-	@RoleDescriptionDisplay(role.ID, role.Description, mayUpdate)
+	@roleNameDisplay(role.ID, role.DisplayName, mayUpdate)
+	@roleDescriptionDisplay(role.ID, role.Description, mayUpdate)
 	<h2 class="text-xl">Sub-roles</h2>
-	@Subroles(role.ID, subroles, mayUpdate)
+	@subroles.Subroles(role.ID, sr, mayUpdate)
 	<h2 class="text-xl">Members</h2>
-	@Members(role.ID, members, mayUpdate, uuid.Nil, false)
+	@members.Members(role.ID, m, mayUpdate, uuid.Nil, false)
 	<h2 class="text-xl">Permissions</h2>
-	@Permissions(role.ID, permissions, mayAddPermissions, mayDeleteInSystems)
+	@permissions.Permissions(role.ID, perms, mayAddPermissions, mayDeleteInSystems)
 }

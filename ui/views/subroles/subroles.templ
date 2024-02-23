@@ -1,13 +1,14 @@
-package views
+package subroles
 
 import (
 	"github.com/datasektionen/pls4/models"
 	"strconv"
+	"github.com/datasektionen/pls4/ui/util"
 )
 
 templ Subroles(roleID string, subroles []models.Role, mayUpdate bool) {
 	<section id="subroles">
-		<section class={ "grid grid-cols-" + ternary(mayUpdate, "3", "2") + " gap-2 items-center p-4" }>
+		<section class={ "grid grid-cols-" + util.Ternary(mayUpdate, "3", "2") + " gap-2 items-center p-4" }>
 			<p class="font-bold">Name</p>
 			<p class="font-bold">Members</p>
 			if mayUpdate {
@@ -18,10 +19,10 @@ templ Subroles(roleID string, subroles []models.Role, mayUpdate bool) {
 				<a href={ templ.URL("/role/" + subrole.ID) }>{ subrole.DisplayName }</a>
 				<span>
 					if subrole.SubroleCount > 0 {
-						<p>{ strconv.Itoa(subrole.SubroleCount) } sub-role{ plural(subrole.SubroleCount) }</p>
+						<p>{ strconv.Itoa(subrole.SubroleCount) } sub-role{ util.Plural(subrole.SubroleCount) }</p>
 					}
 					if subrole.MemberCount > 0 {
-						<p>{ strconv.Itoa(subrole.MemberCount) } member{ plural(subrole.MemberCount) }</p>
+						<p>{ strconv.Itoa(subrole.MemberCount) } member{ util.Plural(subrole.MemberCount) }</p>
 					}
 				</span>
 				if mayUpdate {
@@ -32,18 +33,14 @@ templ Subroles(roleID string, subroles []models.Role, mayUpdate bool) {
 			}
 		</section>
 		if mayUpdate {
-			@AddSubroleButton(roleID)
+			<section class="p-4 pt-0" hx-swap="outerHTML">
+				<button class="bg-slate-300 w-8 h-8" hx-get={ "/role/" + roleID + "/subrole" }>+</button>
+			</section>
 		}
 	</section>
 }
 
-templ AddSubroleButton(roleID string) {
-	<section class="p-4 pt-0" hx-swap="outerHTML">
-		<button class="bg-slate-300 w-8 h-8" hx-get={ "/role/" + roleID + "/subrole" }>+</button>
-	</section>
-}
-
-templ AddSubroleForm(roleID string, options []models.Role) {
+templ addSubroleForm(roleID string, options []models.Role) {
 	<form hx-post={ "/role/" + roleID + "/subrole" } class="flex gap-2 p-4 pt-0" hx-target="#subroles">
 		<select name="subrole" class="p-2">
 			for _, option := range options {
