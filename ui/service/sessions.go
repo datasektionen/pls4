@@ -1,4 +1,4 @@
-package ui
+package service
 
 import (
 	"database/sql"
@@ -13,10 +13,10 @@ type Session struct {
 	DisplayName string
 }
 
-func (s *UI) deleteOldSessionsForever() {
+func (ui *UI) deleteOldSessionsForever() {
 	// TODO: context?
 	for {
-		if _, err := s.db.Exec(`
+		if _, err := ui.db.Exec(`
 			delete from sessions
 			where last_used_at <= now() - interval '1' hour
 		`); err != nil {
@@ -26,8 +26,8 @@ func (s *UI) deleteOldSessionsForever() {
 	}
 }
 
-func (s *UI) Login(code string) (string, error) {
-	res, err := http.Get(s.loginAPIURL + "/verify/" + code + "?api_key=" + s.loginAPIKey)
+func (ui *UI) Login(code string) (string, error) {
+	res, err := http.Get(ui.loginAPIURL + "/verify/" + code + "?api_key=" + ui.loginAPIKey)
 	if err != nil {
 		return "", err
 	}
@@ -39,7 +39,7 @@ func (s *UI) Login(code string) (string, error) {
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
 		return "", err
 	}
-	r := s.db.QueryRow(`
+	r := ui.db.QueryRow(`
 		insert into sessions (kth_id, display_name, last_used_at)
 		values ($1, $2, now())
 		returning id
@@ -51,8 +51,8 @@ func (s *UI) Login(code string) (string, error) {
 	return id, nil
 }
 
-func (s *UI) DeleteSession(sessionID string) error {
-	_, err := s.db.Exec(`
+func (ui *UI) DeleteSession(sessionID string) error {
+	_, err := ui.db.Exec(`
 		delete from sessions
 		where id = $1
 	`, sessionID)
@@ -61,13 +61,13 @@ func (s *UI) DeleteSession(sessionID string) error {
 
 // Returns the kth id and display name of the logged in user, or the zero value if no user is
 // logged in.
-func (s *UI) GetSession(r *http.Request) (Session, error) {
+func (ui *UI) GetSession(r *http.Request) (Session, error) {
 	cookie, err := r.Cookie("session")
 	if err != nil {
 		return Session{}, nil
 	}
 	id := cookie.Value
-	tx, err := s.db.BeginTx(r.Context(), nil)
+	tx, err := ui.db.BeginTx(r.Context(), nil)
 	if err != nil {
 		return Session{}, err
 	}

@@ -10,9 +10,10 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"github.com/datasektionen/pls4/ui"
 	"github.com/datasektionen/pls4/api"
 	"github.com/datasektionen/pls4/database"
+	"github.com/datasektionen/pls4/ui"
+	uiService "github.com/datasektionen/pls4/ui/service"
 )
 
 func main() {
@@ -51,7 +52,7 @@ func main() {
 	}
 
 	apiService := api.New(db)
-	uiService, err := ui.New(db, apiService, loginFrontendURL, loginAPIURL, loginAPIKey, hodisURL)
+	uiService, err := uiService.New(db, apiService, loginFrontendURL, loginAPIURL, loginAPIKey, hodisURL)
 	if err != nil {
 		panic(err)
 	}

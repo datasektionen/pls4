@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/a-h/templ"
+	"github.com/datasektionen/pls4/ui/service"
 	t "github.com/datasektionen/pls4/ui/templates"
 	"github.com/google/uuid"
 )
 
-func Mount(ui *UI) {
+func Mount(ui *service.UI) {
 	http.Handle("/{$}", page(ui, index))
 
 	http.Handle("GET /role/{id}", page(ui, getRole))
@@ -45,13 +46,13 @@ func Mount(ui *UI) {
 	http.Handle("/logout", route(ui, logout))
 }
 
-func route(ui *UI, handler func(s *UI, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+func route(ui *service.UI, handler func(s *service.UI, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		handler(ui, w, r)
 	}
 }
 
-func page(ui *UI, handler func(s *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
+func page(ui *service.UI, handler func(s *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html; charset=utf-8")
 
@@ -64,7 +65,7 @@ func page(ui *UI, handler func(s *UI, ctx context.Context, w http.ResponseWriter
 		layout := t.Body()
 		if r.Header.Get("HX-Boosted") != "true" {
 			session, _ := ui.GetSession(r)
-			layout = t.Layout(session.DisplayName, ui.loginFrontendURL)
+			layout = t.Layout(session.DisplayName, ui.LoginFrontendURL())
 		}
 		err = layout.Render(templ.WithChildren(ctx, component), w)
 		if err != nil {
@@ -74,7 +75,7 @@ func page(ui *UI, handler func(s *UI, ctx context.Context, w http.ResponseWriter
 	}
 }
 
-func partial(ui *UI, handler func(s *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
+func partial(ui *service.UI, handler func(s *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html; charset=utf-8")
 
@@ -90,7 +91,7 @@ func partial(ui *UI, handler func(s *UI, ctx context.Context, w http.ResponseWri
 	}
 }
 
-func renderRoles(ui *UI, ctx context.Context, session Session) templ.Component {
+func renderRoles(ui *service.UI, ctx context.Context, session service.Session) templ.Component {
 	roles, err := ui.ListRoles(ctx)
 	if err != nil {
 		slog.Error("Could not get roles", "error", err)
@@ -113,7 +114,7 @@ func renderRoles(ui *UI, ctx context.Context, session Session) templ.Component {
 	return t.Roles(roles, mayCreate, deletable)
 }
 
-func index(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func index(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	session, err := ui.GetSession(r)
 	if err != nil {
 		slog.Error("Could not get current session", "error", err)
@@ -122,7 +123,7 @@ func index(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) 
 	return renderRoles(ui, ctx, session)
 }
 
-func getRole(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func getRole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	role, err := ui.GetRole(ctx, roleID)
 	if err != nil {
@@ -173,7 +174,7 @@ func getRole(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request
 	return t.Role(*role, subroles, members, permissions, mayUpdate, mayAddPermissions, mayDeleteInSystems)
 }
 
-func createRoleForm(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func createRoleForm(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	session, err := ui.GetSession(r)
 	if err != nil {
 		slog.Error("Could not get current session", "error", err)
@@ -188,7 +189,7 @@ func createRoleForm(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.
 	return t.CreateRoleForm(roles)
 }
 
-func createRole(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func createRole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	session, err := ui.GetSession(r)
 	if err != nil {
 		slog.Error("Could not get current session", "error", err)
@@ -207,7 +208,7 @@ func createRole(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Requ
 	return renderRoles(ui, ctx, session)
 }
 
-func deleteRole(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func deleteRole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	session, err := ui.GetSession(r)
 	if err != nil {
 		slog.Error("Could not get current session", "error", err)
@@ -223,7 +224,7 @@ func deleteRole(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Requ
 	return renderRoles(ui, ctx, session)
 }
 
-func roleNameForm(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func roleNameForm(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 
 	role, err := ui.GetRole(r.Context(), roleID)
@@ -237,7 +238,7 @@ func roleNameForm(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Re
 	return t.RoleNameForm(*role)
 }
 
-func updateRoleName(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func updateRoleName(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 
 	displayName := r.FormValue("display-name")
@@ -253,7 +254,7 @@ func updateRoleName(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.
 	return t.RoleNameDisplay(roleID, displayName, true)
 }
 
-func roleDescriptionForm(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func roleDescriptionForm(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 
 	role, err := ui.GetRole(r.Context(), roleID)
@@ -267,7 +268,7 @@ func roleDescriptionForm(ui *UI, ctx context.Context, w http.ResponseWriter, r *
 	return t.RoleDescriptionForm(*role)
 }
 
-func updateRoleDescription(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func updateRoleDescription(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 
 	description := r.FormValue("description")
@@ -283,7 +284,7 @@ func updateRoleDescription(ui *UI, ctx context.Context, w http.ResponseWriter, r
 	return t.RoleDescriptionDisplay(roleID, description, true)
 }
 
-func roleSubroleForm(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func roleSubroleForm(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 
 	options, err := ui.ListRoles(ctx)
@@ -294,7 +295,7 @@ func roleSubroleForm(ui *UI, ctx context.Context, w http.ResponseWriter, r *http
 	return t.AddSubroleForm(roleID, options)
 }
 
-func roleAddSubrole(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func roleAddSubrole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	session, err := ui.GetSession(r)
 	if err != nil {
 		slog.Error("Could not get current session", "error", err)
@@ -312,7 +313,7 @@ func roleAddSubrole(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.
 	return renderSubroles(ui, ctx, session, roleID)
 }
 
-func roleRemoveSubrole(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func roleRemoveSubrole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	session, err := ui.GetSession(r)
 	if err != nil {
 		slog.Error("Could not get current session", "error", err)
@@ -330,7 +331,7 @@ func roleRemoveSubrole(ui *UI, ctx context.Context, w http.ResponseWriter, r *ht
 	return renderSubroles(ui, ctx, session, roleID)
 }
 
-func renderSubroles(ui *UI, ctx context.Context, session Session, roleID string) templ.Component {
+func renderSubroles(ui *service.UI, ctx context.Context, session service.Session, roleID string) templ.Component {
 	subroles, err := ui.GetSubroles(ctx, roleID)
 	if err != nil {
 		slog.Error("Could not get subroles", "error", err, "role_id", roleID)
@@ -344,7 +345,7 @@ func renderSubroles(ui *UI, ctx context.Context, session Session, roleID string)
 	return t.Subroles(roleID, subroles, mayUpdate)
 }
 
-func getRoleMembers(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func getRoleMembers(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	toUpdateMember, _ := uuid.Parse(r.FormValue("updateMemberID"))
 	addNew := r.Form.Has("new")
@@ -370,7 +371,7 @@ func getRoleMembers(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.
 	return t.Members(roleID, members, mayUpdate, toUpdateMember, addNew)
 }
 
-func roleAddMember(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func roleAddMember(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 
 	session, err := ui.GetSession(r)
@@ -398,7 +399,7 @@ func roleAddMember(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.R
 	return renderMembers(ui, ctx, session, roleID)
 }
 
-func roleUpdateMember(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func roleUpdateMember(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	memberID, err := uuid.Parse(r.PathValue("memberID"))
 	if err != nil {
@@ -428,7 +429,7 @@ func roleUpdateMember(ui *UI, ctx context.Context, w http.ResponseWriter, r *htt
 	return renderMembers(ui, ctx, session, roleID)
 }
 
-func roleEndMember(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func roleEndMember(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	member, _ := uuid.Parse(r.PathValue("memberID"))
 
@@ -446,7 +447,7 @@ func roleEndMember(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.R
 	return renderMembers(ui, ctx, session, roleID)
 }
 
-func roleRemoveMember(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func roleRemoveMember(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	member, _ := uuid.Parse(r.PathValue("memberID"))
 
@@ -464,7 +465,7 @@ func roleRemoveMember(ui *UI, ctx context.Context, w http.ResponseWriter, r *htt
 	return renderMembers(ui, ctx, session, roleID)
 }
 
-func renderMembers(ui *UI, ctx context.Context, session Session, roleID string) templ.Component {
+func renderMembers(ui *service.UI, ctx context.Context, session service.Session, roleID string) templ.Component {
 	members, err := ui.GetRoleMembers(ctx, roleID, true, true)
 	if err != nil {
 		slog.Error("Could not get members", "error", err, "role_id", roleID)
@@ -480,7 +481,7 @@ func renderMembers(ui *UI, ctx context.Context, session Session, roleID string) 
 	return t.Members(roleID, members, mayUpdate, uuid.Nil, false)
 }
 
-func roleAddPermission(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func roleAddPermission(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	session, err := ui.GetSession(r)
 	if err != nil {
 		slog.Error("Could not get current session", "error", err)
@@ -500,7 +501,7 @@ func roleAddPermission(ui *UI, ctx context.Context, w http.ResponseWriter, r *ht
 	return renderPermissions(ui, ctx, session, roleID)
 }
 
-func roleRemovePermission(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func roleRemovePermission(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	session, err := ui.GetSession(r)
 	if err != nil {
 		slog.Error("Could not get current session", "error", err)
@@ -522,7 +523,7 @@ func roleRemovePermission(ui *UI, ctx context.Context, w http.ResponseWriter, r 
 	return renderPermissions(ui, ctx, session, roleID)
 }
 
-func renderPermissions(ui *UI, ctx context.Context, session Session, roleID string) templ.Component {
+func renderPermissions(ui *service.UI, ctx context.Context, session service.Session, roleID string) templ.Component {
 	permissions, err := ui.GetRolePermissions(ctx, roleID)
 	if err != nil {
 		slog.Error("Could not get role permissions", "error", err, "role_id", roleID)
@@ -548,7 +549,7 @@ func renderPermissions(ui *UI, ctx context.Context, session Session, roleID stri
 	return t.Permissions(roleID, permissions, mayAddPermissions, mayDeleteInSystems)
 }
 
-func addPermissionForm(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func addPermissionForm(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 
 	session, err := ui.GetSession(r)
@@ -569,7 +570,7 @@ func addPermissionForm(ui *UI, ctx context.Context, w http.ResponseWriter, r *ht
 	return t.RoleAddPermissionForm(roleID, systems)
 }
 
-func permissionSelect(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func permissionSelect(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	system := r.FormValue("system")
 
 	permissions, err := ui.GetPermissions(r.Context(), system)
@@ -580,7 +581,7 @@ func permissionSelect(ui *UI, ctx context.Context, w http.ResponseWriter, r *htt
 	return t.PermissionSelect(permissions)
 }
 
-func scopeInput(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func scopeInput(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	system := r.FormValue("system")
 	permission := r.FormValue("permission")
 
@@ -592,7 +593,7 @@ func scopeInput(ui *UI, ctx context.Context, w http.ResponseWriter, r *http.Requ
 	return t.ScopeInput(hasScope)
 }
 
-func login(ui *UI, w http.ResponseWriter, r *http.Request) {
+func login(ui *service.UI, w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	sessionToken, err := ui.Login(code)
 	if err != nil {
@@ -611,7 +612,7 @@ func login(ui *UI, w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func logout(ui *UI, w http.ResponseWriter, r *http.Request) {
+func logout(ui *service.UI, w http.ResponseWriter, r *http.Request) {
 	cookie, _ := r.Cookie("session")
 	if cookie != nil {
 		ui.DeleteSession(cookie.Value)
