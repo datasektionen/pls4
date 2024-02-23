@@ -1,11 +1,11 @@
-package admin
+package ui
 
 import (
 	"context"
 	"slices"
 )
 
-func (s *Admin) MayUpdateRole(ctx context.Context, kthID, roleID string) (bool, error) {
+func (s *UI) MayUpdateRole(ctx context.Context, kthID, roleID string) (bool, error) {
 	scopes, err := s.api.UserGetScopes(ctx, kthID, "pls", "role")
 	if err != nil {
 		return false, err
@@ -13,11 +13,11 @@ func (s *Admin) MayUpdateRole(ctx context.Context, kthID, roleID string) (bool, 
 	return slices.ContainsFunc(scopes, func(r string) bool { return r == "*" || r == roleID }), nil
 }
 
-func (s *Admin) MayCreateRoles(ctx context.Context, kthID string) (bool, error) {
+func (s *UI) MayCreateRoles(ctx context.Context, kthID string) (bool, error) {
 	return s.api.UserCheckPermission(ctx, kthID, "pls", "create-role")
 }
 
-func (s *Admin) MayDeleteRole(ctx context.Context, kthID, roleID string) (bool, error) {
+func (s *UI) MayDeleteRole(ctx context.Context, kthID, roleID string) (bool, error) {
 	mayCreate, err := s.MayCreateRoles(ctx, kthID)
 	if err != nil {
 		return false, err
@@ -29,7 +29,7 @@ func (s *Admin) MayDeleteRole(ctx context.Context, kthID, roleID string) (bool, 
 	return mayCreate && mayUpdate, nil
 }
 
-func (s *Admin) MayDeleteRoles(ctx context.Context, kthID string) (map[string]struct{}, error) {
+func (s *UI) MayDeleteRoles(ctx context.Context, kthID string) (map[string]struct{}, error) {
 	mayCreate, err := s.MayCreateRoles(ctx, kthID)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (s *Admin) MayDeleteRoles(ctx context.Context, kthID string) (map[string]st
 	return deletable, nil
 }
 
-func (s *Admin) MayUpdatePermissionsInSystem(ctx context.Context, kthID, system string) (bool, error) {
+func (s *UI) MayUpdatePermissionsInSystem(ctx context.Context, kthID, system string) (bool, error) {
 	systems, err := s.api.UserGetScopes(ctx, kthID, "pls", "system")
 	if err != nil {
 		return false, err
@@ -62,7 +62,7 @@ func (s *Admin) MayUpdatePermissionsInSystem(ctx context.Context, kthID, system 
 	return slices.ContainsFunc(systems, func(s string) bool { return s == "*" || s == system }), nil
 }
 
-func (s *Admin) MayUpdatePermissionsInSystems(ctx context.Context, kthID string, systems ...[]string) (map[string]struct{}, error) {
+func (s *UI) MayUpdatePermissionsInSystems(ctx context.Context, kthID string, systems ...[]string) (map[string]struct{}, error) {
 	var sys []string
 	switch len(systems) {
 	case 0:
@@ -90,6 +90,6 @@ func (s *Admin) MayUpdatePermissionsInSystems(ctx context.Context, kthID string,
 	return granted, nil
 }
 
-func (s *Admin) MayAddPermissions(ctx context.Context, kthID string) (bool, error) {
+func (s *UI) MayAddPermissions(ctx context.Context, kthID string) (bool, error) {
 	return s.api.UserCheckPermission(ctx, kthID, "pls", "system")
 }

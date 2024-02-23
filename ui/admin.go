@@ -1,4 +1,4 @@
-package admin
+package ui
 
 import (
 	"database/sql"
@@ -6,7 +6,7 @@ import (
 	"github.com/datasektionen/pls4/api"
 )
 
-type Admin struct {
+type UI struct {
 	db               *sql.DB
 	api              *api.API
 	loginFrontendURL string
@@ -15,8 +15,8 @@ type Admin struct {
 	hodisURL         string
 }
 
-func New(db *sql.DB, api *api.API, loginFrontendURL, loginAPIURL, loginAPIKey, hodisURL string) (*Admin, error) {
-	s := &Admin{}
+func New(db *sql.DB, api *api.API, loginFrontendURL, loginAPIURL, loginAPIKey, hodisURL string) (*UI, error) {
+	s := &UI{}
 
 	s.api = api
 	s.loginFrontendURL = loginFrontendURL

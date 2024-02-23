@@ -10,7 +10,7 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"github.com/datasektionen/pls4/admin"
+	"github.com/datasektionen/pls4/ui"
 	"github.com/datasektionen/pls4/api"
 	"github.com/datasektionen/pls4/database"
 )
@@ -51,13 +51,13 @@ func main() {
 	}
 
 	apiService := api.New(db)
-	adminService, err := admin.New(db, apiService, loginFrontendURL, loginAPIURL, loginAPIKey, hodisURL)
+	uiService, err := ui.New(db, apiService, loginFrontendURL, loginAPIURL, loginAPIKey, hodisURL)
 	if err != nil {
 		panic(err)
 	}
 
 	api.Mount(apiService)
-	admin.Mount(adminService)
+	ui.Mount(uiService)
 
 	slog.Info("Started", "address", address)
 	slog.Error("Server crashed", "error", http.ListenAndServe(address, nil))

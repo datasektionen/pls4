@@ -1,4 +1,4 @@
-package admin
+package ui
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Admin) ListRoles(ctx context.Context) ([]models.Role, error) {
+func (s *UI) ListRoles(ctx context.Context) ([]models.Role, error) {
 	rows, err := s.db.QueryContext(ctx, `--sql
 		select
 			r.id, r.display_name, r.description,
@@ -43,7 +43,7 @@ func (s *Admin) ListRoles(ctx context.Context) ([]models.Role, error) {
 	return roles, nil
 }
 
-func (s *Admin) GetRole(ctx context.Context, id string) (*models.Role, error) {
+func (s *UI) GetRole(ctx context.Context, id string) (*models.Role, error) {
 	rows := s.db.QueryRowContext(ctx, `--sql
 		select
 			r.id, r.display_name, r.description,
@@ -62,7 +62,7 @@ func (s *Admin) GetRole(ctx context.Context, id string) (*models.Role, error) {
 	return &r, err
 }
 
-func (s *Admin) GetSubroles(ctx context.Context, id string) ([]models.Role, error) {
+func (s *UI) GetSubroles(ctx context.Context, id string) ([]models.Role, error) {
 	rows, err := s.db.QueryContext(ctx, `--sql
 		select
 			r.id, r.display_name, r.description,
@@ -91,7 +91,7 @@ func (s *Admin) GetSubroles(ctx context.Context, id string) ([]models.Role, erro
 	return roles, nil
 }
 
-func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool, includeIndirect bool) ([]models.Member, error) {
+func (s *UI) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool, includeIndirect bool) ([]models.Member, error) {
 	query := `--sql
 		select
 			id, kth_id, modified_by,
@@ -139,7 +139,7 @@ func (s *Admin) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool,
 	return members, nil
 }
 
-func (s *Admin) GetRolePermissions(ctx context.Context, id string) ([]models.SystemPermissionInstances, error) {
+func (s *UI) GetRolePermissions(ctx context.Context, id string) ([]models.SystemPermissionInstances, error) {
 	rows, err := s.db.QueryContext(ctx, `--sql
 		select id, system_id, permission_id, coalesce(scope, '')
 		from roles_permissions
@@ -175,7 +175,7 @@ func (s *Admin) GetRolePermissions(ctx context.Context, id string) ([]models.Sys
 	return perms[1:], nil
 }
 
-func (s *Admin) UpdateRole(ctx context.Context, kthID, roleID, displayName, description string) error {
+func (s *UI) UpdateRole(ctx context.Context, kthID, roleID, displayName, description string) error {
 	if ok, err := s.MayUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
 	} else if !ok {
@@ -202,7 +202,7 @@ func (s *Admin) UpdateRole(ctx context.Context, kthID, roleID, displayName, desc
 	return nil
 }
 
-func (s *Admin) AddSubrole(ctx context.Context, kthID, roleID, subroleID string) error {
+func (s *UI) AddSubrole(ctx context.Context, kthID, roleID, subroleID string) error {
 	if ok, err := s.MayUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
 	} else if !ok {
@@ -219,7 +219,7 @@ func (s *Admin) AddSubrole(ctx context.Context, kthID, roleID, subroleID string)
 	return nil
 }
 
-func (s *Admin) RemoveSubrole(ctx context.Context, kthID, roleID, subroleID string) error {
+func (s *UI) RemoveSubrole(ctx context.Context, kthID, roleID, subroleID string) error {
 	if ok, err := s.MayUpdateRole(ctx, kthID, roleID); err != nil {
 		return err
 	} else if !ok {
@@ -243,7 +243,7 @@ func (s *Admin) RemoveSubrole(ctx context.Context, kthID, roleID, subroleID stri
 	return nil
 }
 
-func (s *Admin) UpdateMember(
+func (s *UI) UpdateMember(
 	ctx context.Context,
 	kthID, roleID string,
 	memberID uuid.UUID,
@@ -276,7 +276,7 @@ func (s *Admin) UpdateMember(
 	return nil
 }
 
-func (s *Admin) AddMember(
+func (s *UI) AddMember(
 	ctx context.Context,
 	kthID, roleID, memberKTHID string,
 	startDate time.Time,
@@ -305,7 +305,7 @@ func (s *Admin) AddMember(
 	return nil
 }
 
-func (s *Admin) RemoveMember(
+func (s *UI) RemoveMember(
 	ctx context.Context,
 	kthID, roleID string,
 	memberID uuid.UUID,
@@ -333,7 +333,7 @@ func (s *Admin) RemoveMember(
 	return nil
 }
 
-func (s *Admin) CreateRole(
+func (s *UI) CreateRole(
 	ctx context.Context,
 	kthID, id, displayName, description, ownerID string,
 ) error {
@@ -378,7 +378,7 @@ func (s *Admin) CreateRole(
 
 var tableRexeg = regexp.MustCompile(`on table "roles_(.*)"$`)
 
-func (s *Admin) DeleteRole(
+func (s *UI) DeleteRole(
 	ctx context.Context,
 	kthID, roleID string,
 ) error {
@@ -426,7 +426,7 @@ func (s *Admin) DeleteRole(
 	return tx.Commit()
 }
 
-func (s *Admin) RemovePermission(
+func (s *UI) RemovePermission(
 	ctx context.Context,
 	kthID string,
 	permissionInstanceID uuid.UUID,
@@ -467,7 +467,7 @@ func (s *Admin) RemovePermission(
 	return tx.Commit()
 }
 
-func (s *Admin) AddPermissionToRole(
+func (s *UI) AddPermissionToRole(
 	ctx context.Context,
 	kthID, roleID string,
 	system, permission, scope string,
@@ -526,7 +526,7 @@ func createPermissionInstance(
 	return id, nil
 }
 
-func (s *Admin) GetUserRoles(
+func (s *UI) GetUserRoles(
 	ctx context.Context,
 	kthID string,
 ) ([]models.Role, error) {
@@ -559,7 +559,7 @@ func (s *Admin) GetUserRoles(
 	return roles, nil
 }
 
-func (s *Admin) GetAllSystems(ctx context.Context) ([]string, error) {
+func (s *UI) GetAllSystems(ctx context.Context) ([]string, error) {
 	rows, err := s.db.QueryContext(ctx, `--sql
 		select id
 		from systems
@@ -575,7 +575,7 @@ func (s *Admin) GetAllSystems(ctx context.Context) ([]string, error) {
 	return systems, nil
 }
 
-func (s *Admin) GetAllRoles(ctx context.Context) ([]string, error) {
+func (s *UI) GetAllRoles(ctx context.Context) ([]string, error) {
 	rows, err := s.db.QueryContext(ctx, `--sql
 		select id
 		from roles
@@ -591,7 +591,7 @@ func (s *Admin) GetAllRoles(ctx context.Context) ([]string, error) {
 	return roles, nil
 }
 
-func (s *Admin) GetPermissions(ctx context.Context, system string) ([]string, error) {
+func (s *UI) GetPermissions(ctx context.Context, system string) ([]string, error) {
 	rows, err := s.db.QueryContext(ctx, `--sql
 		select id
 		from permissions
@@ -608,7 +608,7 @@ func (s *Admin) GetPermissions(ctx context.Context, system string) ([]string, er
 	return permissions, nil
 }
 
-func (s *Admin) PermissionHasScope(ctx context.Context, system, permission string) (bool, error) {
+func (s *UI) PermissionHasScope(ctx context.Context, system, permission string) (bool, error) {
 	var hasScope bool
 	err := s.db.QueryRowContext(ctx, `--sql
 		select has_scope
