@@ -12,8 +12,8 @@ import (
 
 	"github.com/datasektionen/pls4/api"
 	"github.com/datasektionen/pls4/database"
-	"github.com/datasektionen/pls4/ui"
 	uiService "github.com/datasektionen/pls4/ui/service"
+	uiViews "github.com/datasektionen/pls4/ui/views"
 )
 
 func main() {
@@ -58,7 +58,7 @@ func main() {
 	}
 
 	api.Mount(apiService)
-	ui.Mount(uiService)
+	uiViews.Mount(uiService)
 
 	slog.Info("Started", "address", address)
 	slog.Error("Server crashed", "error", http.ListenAndServe(address, nil))

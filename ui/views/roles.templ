@@ -1,8 +1,9 @@
-package templates
+package views
 
 import (
 	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/datasektionen/pls4/models"
 )
 
@@ -82,4 +83,73 @@ templ CreateRoleForm(roles []models.Role) {
 			<button class="bg-blue-300 px-4 p-2 rounded-md">Create</button>
 		</div>
 	</form>
+}
+
+templ RoleNameDisplay(roleID string, displayName string, mayUpdate bool) {
+	<h1
+		class="text-3xl font-bold"
+		if mayUpdate {
+			hx-get={ "/role/" + roleID + "/name" }
+			hx-swap="outerHTML"
+		}
+	>
+		{ displayName }
+		if mayUpdate {
+			<i class="fa-regular fa-pen-to-square"></i>
+		}
+	</h1>
+}
+
+templ RoleNameForm(role models.Role) {
+	<form
+		class="text-3xl"
+		hx-post={ "/role/" + role.ID + "/name" }
+		hx-swap="outerHTML"
+	>
+		<input name="display-name" type="text" value={ role.DisplayName }/>
+		<input class="bg-blue-300 p-2 rounded-sm" type="submit" value="Save"/>
+	</form>
+}
+
+templ RoleDescriptionDisplay(roleID string, description string, mayUpdate bool) {
+	<p
+		class="p-2"
+		if mayUpdate {
+			hx-get={ "/role/" + roleID + "/description" }
+			hx-swap="outerHTML"
+		}
+	>
+		{ description }
+		if mayUpdate {
+			<i class="fa-regular fa-pen-to-square"></i>
+		}
+	</p>
+}
+
+templ RoleDescriptionForm(role models.Role) {
+	<form
+		hx-post={ "/role/" + role.ID + "/description" }
+		hx-swap="outerHTML"
+	>
+		<textarea required class="p-2 w-96" name="description">{ role.Description }</textarea>
+		<input class="block bg-blue-300 p-1 rounded-sm" type="submit" value="Save"/>
+	</form>
+}
+
+templ Role(
+	role models.Role,
+	subroles []models.Role,
+	members []models.Member,
+	permissions []models.SystemPermissionInstances,
+	mayUpdate, mayAddPermissions bool,
+	mayDeleteInSystems map[string]struct{},
+) {
+	@RoleNameDisplay(role.ID, role.DisplayName, mayUpdate)
+	@RoleDescriptionDisplay(role.ID, role.Description, mayUpdate)
+	<h2 class="text-xl">Sub-roles</h2>
+	@Subroles(role.ID, subroles, mayUpdate)
+	<h2 class="text-xl">Members</h2>
+	@Members(role.ID, members, mayUpdate, uuid.Nil, false)
+	<h2 class="text-xl">Permissions</h2>
+	@Permissions(role.ID, permissions, mayAddPermissions, mayDeleteInSystems)
 }
