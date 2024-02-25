@@ -2,6 +2,7 @@ package views
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -51,6 +52,8 @@ func Mount(ui *service.UI) {
 	http.Handle("/login", route(ui, login))
 	http.Handle("/login-callback", route(ui, loginCallback))
 	http.Handle("/logout", route(ui, logout))
+
+	http.Handle("/fuzzyfile", route(ui, fuzzyfile))
 }
 
 func route(ui *service.UI, handler func(s *service.UI, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
@@ -175,4 +178,32 @@ func logout(ui *service.UI, w http.ResponseWriter, r *http.Request) {
 		MaxAge: -1,
 	})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func fuzzyfile(ui *service.UI, w http.ResponseWriter, r *http.Request) {
+	roles, err := ui.ListRoles(r.Context())
+	if err != nil {
+		slog.Error("Could not get roles", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	fuzzes := make([]map[string]string, 0)
+	for _, role := range roles {
+		fuzzes = append(fuzzes, map[string]string{
+			"name": role.DisplayName,
+			"str":  role.ID + " " + role.DisplayName + " ",
+			"href": "/role/" + role.ID,
+		})
+	}
+
+	w.Header().Set("content-type", "application/json")
+	if err := json.NewEncoder(w).Encode(map[string]any{
+		"@type":  "fuzzyfile",
+		"fuzzes": fuzzes,
+	}); err != nil {
+		slog.Error("Could not write fuzzyfile", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
