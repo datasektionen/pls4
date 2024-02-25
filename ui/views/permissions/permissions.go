@@ -65,7 +65,11 @@ func PermissionSelect(ui *service.UI, ctx context.Context, session service.Sessi
 		slog.Error("Could not get permissions for system", "error", err, "system", system)
 		return errors.Error(http.StatusInternalServerError)
 	}
-	return permissionSelect(permissions)
+	permissionIDs := make([]string, len(permissions))
+	for i, perm := range permissions {
+		permissionIDs[i] = perm.ID
+	}
+	return permissionSelect(permissionIDs)
 }
 
 func ScopeInput(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {

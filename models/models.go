@@ -33,3 +33,8 @@ type PermissionInstance struct {
 	PermissionID string
 	Scope        string
 }
+
+type Permission struct {
+	ID       string
+	HasScope bool
+}

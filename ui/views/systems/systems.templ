@@ -1,0 +1,56 @@
+package systems
+
+import "github.com/datasektionen/pls4/models"
+import "github.com/datasektionen/pls4/ui/util"
+
+templ listSystems(systems []string) {
+	<h1 class="text-2xl font-bold">Systems</h1>
+	<ul class="list-disc pl-5">
+		for _, system := range systems {
+			<li class="py-1">
+				<a class="text-blue-500 underline capitalize" href={ templ.SafeURL("/system/" + system) }>{ system }</a>
+			</li>
+		}
+	</ul>
+}
+
+templ system(id string, permissions []models.Permission, mayUpdate bool) {
+	<h1 class="text-2xl font-bold capitalize">{ id }</h1>
+	<section class={ "grid grid-cols-[auto_1fr" + util.If(mayUpdate, "_1fr", "") + "] gap-x-3 gap-y-1 items-center" }>
+		<p class="font-bold">Permission</p>
+		<p class="font-bold">Has scope</p>
+		if mayUpdate {
+			<p class="font-bold">Options</p>
+		}
+		for _, perm := range permissions {
+			<p>{ perm.ID }</p>
+			<div class="w-5 h-5 border-2 border-neutral-500 rounded-md flex items-center justify-center">
+				if perm.HasScope {
+					<svg class="w-[80%] h-[80%] text-green-800 fill-current" viewBox="0 0 20 20">
+						<path d="M0 11l2-2 5 5L18 3l2 2L7 18z"></path>
+					</svg>
+				}
+			</div>
+			if mayUpdate {
+				<div>
+					<button class="text-red-800">Remove</button>
+					if perm.HasScope {
+						<button class="text-amber-600">Remove scope</button>
+					} else {
+						<button class="text-green-600">Add scope</button>
+					}
+				</div>
+			}
+		}
+	</section>
+	if mayUpdate {
+		<h2 class="text-lg font-bold pt-4 pb-1">Add new:</h2>
+		<form class="flex gap-2">
+			<label for="permission-id">Permission</label>
+			<input type="text" id="permission-id" name="permission-id" class="border border-gray-400 rounded outline-none focus:border-blue-400 focus:border-2 focus:-m-px px-1"/>
+			<label for="has-scope">Has scope</label>
+			<input type="checkbox" id="has-scope" name="has-scope"/>
+			<button class="bg-gray-300 rounded px-1">Add</button>
+		</form>
+	}
+}

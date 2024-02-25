@@ -146,19 +146,20 @@ func createPermissionInstance(
 	return id, nil
 }
 
-func (ui *UI) GetPermissions(ctx context.Context, system string) ([]string, error) {
+func (ui *UI) GetPermissions(ctx context.Context, system string) ([]models.Permission, error) {
 	rows, err := ui.db.QueryContext(ctx, `--sql
-		select id
+		select id, has_scope
 		from permissions
 		where system_id = $1
 	`, system)
 	if err != nil {
 		return nil, err
 	}
-	var permissions []string
+	var permissions []models.Permission
 	for rows.Next() {
-		permissions = append(permissions, "")
-		rows.Scan(&permissions[len(permissions)-1])
+		var perm models.Permission
+		rows.Scan(&perm.ID, &perm.HasScope)
+		permissions = append(permissions, perm)
 	}
 	return permissions, nil
 }

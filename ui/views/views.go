@@ -15,6 +15,7 @@ import (
 	"github.com/datasektionen/pls4/ui/views/permissions"
 	"github.com/datasektionen/pls4/ui/views/roles"
 	"github.com/datasektionen/pls4/ui/views/subroles"
+	"github.com/datasektionen/pls4/ui/views/systems"
 )
 
 //go:generate templ generate
@@ -49,6 +50,9 @@ func Mount(ui *service.UI) {
 	http.Handle("GET /permission-select", partial(ui, permissions.PermissionSelect))
 	http.Handle("GET /scope-input", partial(ui, permissions.ScopeInput))
 
+	http.Handle("GET /system", page(ui, systems.ListSystems))
+	http.Handle("GET /system/{id}", page(ui, systems.GetSystem))
+
 	http.Handle("/login", route(ui, login))
 	http.Handle("/login-callback", route(ui, loginCallback))
 	http.Handle("/logout", route(ui, logout))
@@ -79,7 +83,7 @@ func getCtxAndSession(ui *service.UI, w http.ResponseWriter, r *http.Request) (c
 		}
 		path := "/login?return-url=" + url.QueryEscape(returnURL)
 		w.Header().Add("hx-redirect", path)
-		http.Redirect(w, r, path, http.StatusUnauthorized)
+		http.Redirect(w, r, path, http.StatusSeeOther)
 		return nil, session
 	}
 

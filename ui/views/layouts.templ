@@ -6,6 +6,10 @@ script methone(userID string) {
 		color_scheme: "purple",
 		login_text: userID ? userID : "Login",
 		login_href: userID ? "/logout" : "/login?return-url=" + encodeURIComponent(location.pathname + location.search),
+		links: [
+			{ str: "Roles", href: "/" },
+			{ str: "Systems", href: "/system" },
+		],
 	};
 }
 
