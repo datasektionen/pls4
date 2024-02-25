@@ -11,13 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func RoleAddPermission(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
-	}
-
+func RoleAddPermission(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	system := r.FormValue("system")
 	permission := r.FormValue("permission")
@@ -31,12 +25,7 @@ func RoleAddPermission(ui *service.UI, ctx context.Context, w http.ResponseWrite
 	return renderPermissions(ui, ctx, session, roleID)
 }
 
-func RoleRemovePermission(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
-	}
+func RoleRemovePermission(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	instanceID, err := uuid.Parse(r.PathValue("instanceID"))
 	if err != nil {
@@ -53,14 +42,8 @@ func RoleRemovePermission(ui *service.UI, ctx context.Context, w http.ResponseWr
 	return renderPermissions(ui, ctx, session, roleID)
 }
 
-func AddPermissionForm(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func AddPermissionForm(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
-
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
-	}
 
 	systemSet, err := ui.MayUpdatePermissionsInSystems(ctx, session.KTHID)
 	if err != nil {
@@ -74,7 +57,7 @@ func AddPermissionForm(ui *service.UI, ctx context.Context, w http.ResponseWrite
 	return roleAddPermissionForm(roleID, systems)
 }
 
-func PermissionSelect(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func PermissionSelect(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	system := r.FormValue("system")
 
 	permissions, err := ui.GetPermissions(r.Context(), system)
@@ -85,7 +68,7 @@ func PermissionSelect(ui *service.UI, ctx context.Context, w http.ResponseWriter
 	return permissionSelect(permissions)
 }
 
-func ScopeInput(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func ScopeInput(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	system := r.FormValue("system")
 	permission := r.FormValue("permission")
 

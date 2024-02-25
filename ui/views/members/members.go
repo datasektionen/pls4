@@ -12,17 +12,11 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetRoleMembers(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func GetRoleMembers(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	toUpdateMember, _ := uuid.Parse(r.FormValue("update-member-id"))
 	addNew := r.Form.Has("new")
 	includeExpired := r.Form.Has("include-expired")
-
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
-	}
 
 	members, err := ui.GetRoleMembers(ctx, roleID, includeExpired, true)
 	if err != nil {
@@ -39,14 +33,8 @@ func GetRoleMembers(ui *service.UI, ctx context.Context, w http.ResponseWriter, 
 	return Members(roleID, members, toUpdateMember, mayUpdate, addNew, includeExpired)
 }
 
-func RoleAddMember(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func RoleAddMember(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
-
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
-	}
 
 	kthID := r.FormValue("kth-id")
 
@@ -67,17 +55,11 @@ func RoleAddMember(ui *service.UI, ctx context.Context, w http.ResponseWriter, r
 	return renderMembers(ui, ctx, session, roleID)
 }
 
-func RoleUpdateMember(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func RoleUpdateMember(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	memberID, err := uuid.Parse(r.PathValue("memberID"))
 	if err != nil {
 		return errors.Error(http.StatusBadRequest, "Invalid syntax for member uuid")
-	}
-
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
 	}
 
 	startDate, err := time.Parse(time.DateOnly, r.FormValue("start-date"))
@@ -97,15 +79,9 @@ func RoleUpdateMember(ui *service.UI, ctx context.Context, w http.ResponseWriter
 	return renderMembers(ui, ctx, session, roleID)
 }
 
-func RoleEndMember(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func RoleEndMember(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	member, _ := uuid.Parse(r.PathValue("memberID"))
-
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
-	}
 
 	if err := ui.UpdateMember(ctx, session.KTHID, roleID, member, time.Time{}, time.Now().AddDate(0, 0, -1)); err != nil {
 		slog.Error("Could not edit member", "error", err, "role_id", roleID, "member", member)
@@ -115,15 +91,9 @@ func RoleEndMember(ui *service.UI, ctx context.Context, w http.ResponseWriter, r
 	return renderMembers(ui, ctx, session, roleID)
 }
 
-func RoleRemoveMember(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func RoleRemoveMember(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	member, _ := uuid.Parse(r.PathValue("memberID"))
-
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
-	}
 
 	if err := ui.RemoveMember(ctx, session.KTHID, roleID, member); err != nil {
 		slog.Error("Could not remove member", "error", err, "member", member)

@@ -10,7 +10,7 @@ import (
 	"github.com/datasektionen/pls4/ui/views/errors"
 )
 
-func RoleSubroleForm(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func RoleSubroleForm(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 
 	options, err := ui.ListRoles(ctx)
@@ -21,13 +21,7 @@ func RoleSubroleForm(ui *service.UI, ctx context.Context, w http.ResponseWriter,
 	return addSubroleForm(roleID, options)
 }
 
-func RoleAddSubrole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
-	}
-
+func RoleAddSubrole(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	subrole := r.FormValue("subrole")
 
@@ -39,13 +33,7 @@ func RoleAddSubrole(ui *service.UI, ctx context.Context, w http.ResponseWriter, 
 	return renderSubroles(ui, ctx, session, roleID)
 }
 
-func RoleRemoveSubrole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
-	}
-
+func RoleRemoveSubrole(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	subroleID := r.PathValue("subroleID")
 

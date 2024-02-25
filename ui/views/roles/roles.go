@@ -10,16 +10,11 @@ import (
 	"github.com/datasektionen/pls4/ui/views/errors"
 )
 
-func Index(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
-	}
+func Index(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	return renderRoles(ui, ctx, session)
 }
 
-func GetRole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func GetRole(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	role, err := ui.GetRole(ctx, roleID)
 	if err != nil {
@@ -37,11 +32,6 @@ func GetRole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http
 	members, err := ui.GetRoleMembers(ctx, roleID, false, true)
 	if err != nil {
 		slog.Error("Could not get role members", "error", err, "role_id", roleID)
-		return errors.Error(http.StatusInternalServerError)
-	}
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err, "role_id", roleID)
 		return errors.Error(http.StatusInternalServerError)
 	}
 	permissions, err := ui.GetRolePermissions(ctx, roleID)
@@ -70,13 +60,7 @@ func GetRole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http
 	return roleComponent(*role, subroles, members, permissions, mayUpdate, mayAddPermissions, mayDeleteInSystems)
 }
 
-func CreateRoleForm(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
-	}
-
+func CreateRoleForm(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roles, err := ui.GetUserRoles(r.Context(), session.KTHID)
 	if err != nil {
 		slog.Error("Could not get roles for user", "error", err, "kth_id", session.KTHID)
@@ -85,13 +69,7 @@ func CreateRoleForm(ui *service.UI, ctx context.Context, w http.ResponseWriter, 
 	return createRoleForm(roles)
 }
 
-func CreateRole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
-	}
-
+func CreateRole(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.FormValue("id")
 	displayName := r.FormValue("display-name")
 	description := r.FormValue("description")
@@ -104,13 +82,7 @@ func CreateRole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *h
 	return renderRoles(ui, ctx, session)
 }
 
-func DeleteRole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
-	session, err := ui.GetSession(r)
-	if err != nil {
-		slog.Error("Could not get current session", "error", err)
-		return errors.Error(http.StatusInternalServerError)
-	}
-
+func DeleteRole(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 	if err := ui.DeleteRole(ctx, session.KTHID, roleID); err != nil {
 		slog.Error("Could not delete role", "error", err, "role_id", roleID)
@@ -120,7 +92,7 @@ func DeleteRole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *h
 	return renderRoles(ui, ctx, session)
 }
 
-func RoleNameForm(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func RoleNameForm(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 
 	role, err := ui.GetRole(r.Context(), roleID)
@@ -134,15 +106,10 @@ func RoleNameForm(ui *service.UI, ctx context.Context, w http.ResponseWriter, r 
 	return roleNameForm(*role)
 }
 
-func UpdateRoleName(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func UpdateRoleName(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 
 	displayName := r.FormValue("display-name")
-	session, err := ui.GetSession(r)
-	if err != nil {
-		// TODO: redirect to login?
-		return errors.Error(http.StatusUnauthorized)
-	}
 	if err := ui.UpdateRole(r.Context(), session.KTHID, roleID, displayName, ""); err != nil {
 		slog.Error("Could not update role name", "error", err)
 		return errors.Error(http.StatusInternalServerError)
@@ -150,7 +117,7 @@ func UpdateRoleName(ui *service.UI, ctx context.Context, w http.ResponseWriter, 
 	return roleNameDisplay(roleID, displayName, true)
 }
 
-func RoleDescriptionForm(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func RoleDescriptionForm(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 
 	role, err := ui.GetRole(r.Context(), roleID)
@@ -164,15 +131,10 @@ func RoleDescriptionForm(ui *service.UI, ctx context.Context, w http.ResponseWri
 	return roleDescriptionForm(*role)
 }
 
-func UpdateRoleDescription(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
+func UpdateRoleDescription(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
 
 	description := r.FormValue("description")
-	session, err := ui.GetSession(r)
-	if err != nil {
-		// TODO: redirect to login?
-		return errors.Error(http.StatusUnauthorized)
-	}
 	if err := ui.UpdateRole(r.Context(), session.KTHID, roleID, "", description); err != nil {
 		slog.Error("Could not update role description", "error", err)
 		return errors.Error(http.StatusInternalServerError)

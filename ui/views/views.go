@@ -56,39 +56,58 @@ func route(ui *service.UI, handler func(s *service.UI, w http.ResponseWriter, r 
 	}
 }
 
-func page(ui *service.UI, handler func(s *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
+func getCtxAndSession(ui *service.UI, w http.ResponseWriter, r *http.Request) (context.Context, service.Session) {
+	ctx := r.Context()
+
+	session, err := ui.GetSession(r)
+	if err != nil {
+		slog.Error("Could not get current session", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		errors.Error(http.StatusInternalServerError).Render(ctx, w)
+		return nil, service.Session{}
+	}
+
+	return ctx, session
+}
+
+func page(ui *service.UI, handler func(s *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html; charset=utf-8")
 
-		ctx := r.Context()
-		component := handler(ui, ctx, w, r)
-		var err error
+		ctx, session := getCtxAndSession(ui, w, r)
+		if ctx == nil {
+			return
+		}
+
+		component := handler(ui, ctx, session, w, r)
 		if e, ok := component.(errors.ErrorComponent); ok {
 			w.WriteHeader(e.Code)
 		}
 		layout := body()
 		if r.Header.Get("HX-Boosted") != "true" {
-			session, _ := ui.GetSession(r)
 			layout = document(session.DisplayName, ui.LoginFrontendURL())
 		}
-		err = layout.Render(templ.WithChildren(ctx, component), w)
-		if err != nil {
+		if err := layout.Render(templ.WithChildren(ctx, component), w); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			slog.Error("Could not render template", "error", err)
 		}
 	}
 }
 
-func partial(ui *service.UI, handler func(s *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
+func partial(ui *service.UI, handler func(s *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html; charset=utf-8")
 
-		ctx := r.Context()
-		c := handler(ui, ctx, w, r)
-		if e, ok := c.(errors.ErrorComponent); ok {
+		ctx, session := getCtxAndSession(ui, w, r)
+		if ctx == nil {
+			return
+		}
+
+		component := handler(ui, ctx, session, w, r)
+		if e, ok := component.(errors.ErrorComponent); ok {
 			w.WriteHeader(e.Code)
 		}
-		if err := c.Render(ctx, w); err != nil {
+		if err := component.Render(ctx, w); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			slog.Error("Could not render template", "error", err)
 		}

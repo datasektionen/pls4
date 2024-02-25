@@ -52,7 +52,7 @@ func (ui *UI) Login(code string) (string, error) {
 }
 
 func (ui *UI) DeleteSession(sessionID string) error {
-	_, err := ui.db.Exec(`
+	_, err := ui.db.Exec(`--sql
 		delete from sessions
 		where id = $1
 	`, sessionID)
@@ -62,16 +62,17 @@ func (ui *UI) DeleteSession(sessionID string) error {
 // Returns the kth id and display name of the logged in user, or the zero value if no user is
 // logged in.
 func (ui *UI) GetSession(r *http.Request) (Session, error) {
-	cookie, err := r.Cookie("session")
-	if err != nil {
+	cookie, _ := r.Cookie("session")
+	if cookie == nil {
 		return Session{}, nil
 	}
 	id := cookie.Value
 	tx, err := ui.db.BeginTx(r.Context(), nil)
+	defer tx.Rollback()
 	if err != nil {
 		return Session{}, err
 	}
-	row := tx.QueryRow(`
+	row := tx.QueryRow(`--sql
 		select kth_id, display_name
 		from sessions
 		where id = $1
@@ -85,10 +86,9 @@ func (ui *UI) GetSession(r *http.Request) (Session, error) {
 		return Session{}, nil
 	} else if err != nil {
 		slog.ErrorContext(r.Context(), "Could not get session from database", "id", id, "error", err)
-		_ = tx.Rollback()
 		return Session{}, err
 	}
-	if _, err := tx.Exec(`
+	if _, err := tx.Exec(`--sql
 		update sessions
 		set last_used_at = now()
 		where id = $1
