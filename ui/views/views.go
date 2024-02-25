@@ -86,7 +86,7 @@ func getCtxAndSession(ui *service.UI, w http.ResponseWriter, r *http.Request) (c
 	return ctx, session
 }
 
-func page(ui *service.UI, handler func(s *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
+func page(ui *service.UI, handler func(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html; charset=utf-8")
 
@@ -110,7 +110,7 @@ func page(ui *service.UI, handler func(s *service.UI, ctx context.Context, sessi
 	}
 }
 
-func partial(ui *service.UI, handler func(s *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
+func partial(ui *service.UI, handler func(ui *service.UI, ctx context.Context, session service.Session, w http.ResponseWriter, r *http.Request) templ.Component) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html; charset=utf-8")
 
