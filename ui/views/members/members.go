@@ -14,8 +14,9 @@ import (
 
 func GetRoleMembers(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
 	roleID := r.PathValue("id")
-	toUpdateMember, _ := uuid.Parse(r.FormValue("updateMemberID"))
+	toUpdateMember, _ := uuid.Parse(r.FormValue("update-member-id"))
 	addNew := r.Form.Has("new")
+	includeExpired := r.Form.Has("include-expired")
 
 	session, err := ui.GetSession(r)
 	if err != nil {
@@ -23,7 +24,7 @@ func GetRoleMembers(ui *service.UI, ctx context.Context, w http.ResponseWriter, 
 		return errors.Error(http.StatusInternalServerError)
 	}
 
-	members, err := ui.GetRoleMembers(ctx, roleID, true, true)
+	members, err := ui.GetRoleMembers(ctx, roleID, includeExpired, true)
 	if err != nil {
 		slog.Error("Could not get members", "error", err, "role_id", roleID)
 		return errors.Error(http.StatusInternalServerError)
@@ -35,7 +36,7 @@ func GetRoleMembers(ui *service.UI, ctx context.Context, w http.ResponseWriter, 
 		return errors.Error(http.StatusInternalServerError)
 	}
 
-	return Members(roleID, members, mayUpdate, toUpdateMember, addNew)
+	return Members(roleID, members, toUpdateMember, mayUpdate, addNew, includeExpired)
 }
 
 func RoleAddMember(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http.Request) templ.Component {
@@ -133,7 +134,7 @@ func RoleRemoveMember(ui *service.UI, ctx context.Context, w http.ResponseWriter
 }
 
 func renderMembers(ui *service.UI, ctx context.Context, session service.Session, roleID string) templ.Component {
-	members, err := ui.GetRoleMembers(ctx, roleID, true, true)
+	members, err := ui.GetRoleMembers(ctx, roleID, false, true)
 	if err != nil {
 		slog.Error("Could not get members", "error", err, "role_id", roleID)
 		return errors.Error(http.StatusInternalServerError)
@@ -145,5 +146,5 @@ func renderMembers(ui *service.UI, ctx context.Context, session service.Session,
 		return errors.Error(http.StatusInternalServerError)
 	}
 
-	return Members(roleID, members, mayUpdate, uuid.Nil, false)
+	return Members(roleID, members, uuid.Nil, mayUpdate, false, false)
 }

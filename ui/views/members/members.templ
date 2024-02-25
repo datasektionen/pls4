@@ -7,78 +7,90 @@ import (
 	"github.com/datasektionen/pls4/ui/util"
 )
 
-templ Members(roleID string, members []models.Member, mayUpdate bool, toUpdateMemberID uuid.UUID, addNew bool) {
-	<section
-		class={ "grid grid-cols-[repeat(" + util.Ternary(mayUpdate, "3", "2") + ",auto)] gap-2 items-center p-3" }
-		hx-swap="outerHTML"
-		hx-target="this"
-	>
-		<p class="font-bold">Name</p>
-		<p class="font-bold">Date range</p>
-		if mayUpdate {
-			<p class="font-bold">Options</p>
-		}
-		for _, member := range members {
-			<hr class="col-span-full"/>
-			if member.MemberID == uuid.Nil {
-				<span>{ member.KTHID }</span>
-				<span></span>
-				if mayUpdate {
+templ Members(roleID string, members []models.Member, toUpdateMemberID uuid.UUID, mayUpdate, addNew, includeExpired bool) {
+	<div hx-swap="outerHTML" hx-target="this" hx-include="#member-filters">
+		<form
+			hx-get={ "/role/" + roleID + "/member" }
+			hx-trigger="change from:#member-filters"
+			id="member-filters"
+			class="flex justify-end gap-2"
+		>
+			<label for="include-expired">Include expired</label>
+			<input
+				id="include-expired"
+				name="include-expired"
+				checked?={ includeExpired }
+				type="checkbox"
+			/>
+		</form>
+		<section class={ "grid grid-cols-[repeat(" + util.Ternary(mayUpdate, "3", "2") + ",auto)] gap-2 items-center p-3" }>
+			<p class="font-bold">Name</p>
+			<p class="font-bold">Date range</p>
+			if mayUpdate {
+				<p class="font-bold">Options</p>
+			}
+			for _, member := range members {
+				<hr class="col-span-full"/>
+				if member.MemberID == uuid.Nil {
+					<span>{ member.KTHID }</span>
 					<span></span>
+					if mayUpdate {
+						<span></span>
+					}
+				} else if (member.MemberID == toUpdateMemberID ) {
+					<span class="font-bold">{ member.KTHID }</span>
+					<span class="updating">
+						<input type="date" name="start-date" value={ member.StartDate.Format(time.DateOnly) }/> -
+						<input type="date" name="end-date" value={ member.EndDate.Format(time.DateOnly) }/>
+					</span>
+					<span>
+						<button
+							class="text-blue-700"
+							hx-post={ "/role/" + roleID + "/member/" + member.MemberID.String() }
+							hx-include=".updating"
+						>Save</button>
+					</span>
+				} else {
+					<span class="font-bold">{ member.KTHID }</span>
+					<span>{ member.StartDate.Format(time.DateOnly) } - { member.EndDate.Format(time.DateOnly) }</span>
+					if mayUpdate {
+						<div>
+							<button
+								class="text-green-800"
+								hx-get={ "/role/" + roleID + "/member?update-member-id=" + member.MemberID.String() }
+							>Edit</button>
+							<button
+								class="text-red-800"
+								hx-delete={ "/role/" + roleID + "/member/" + member.MemberID.String() }
+								hx-confirm="Are you sure? Prefer to set end date to yesterday"
+							>Remove</button>
+							<button
+								class="text-amber-800"
+								hx-post={ "/role/" + roleID + "/member/" + member.MemberID.String() + "/end" }
+								title="Set role membership end date to yesterday"
+							>End</button>
+						</div>
+					}
 				}
-			} else if (member.MemberID == toUpdateMemberID ) {
-				<span class="font-bold">{ member.KTHID }</span>
-				<span class="updating">
-					<input type="date" name="start-date" value={ member.StartDate.Format(time.DateOnly) }/> -
-					<input type="date" name="end-date" value={ member.EndDate.Format(time.DateOnly) }/>
+			}
+			if addNew {
+				<hr class="col-span-full"/>
+				<input autofocus class="adding font-bold" type="text" name="kth-id"/>
+				<span class="adding">
+					<input type="date" name="start-date" value={ time.Now().Format(time.DateOnly) }/> -
+					<input type="date" name="end-date"/>
 				</span>
 				<span>
 					<button
 						class="text-blue-700"
-						hx-post={ "/role/" + roleID + "/member/" + member.MemberID.String() }
-						hx-include=".updating"
-					>Save</button>
+						hx-post={ "/role/" + roleID + "/member" }
+						hx-include=".adding"
+					>Add</button>
 				</span>
-			} else {
-				<span class="font-bold">{ member.KTHID }</span>
-				<span>{ member.StartDate.Format(time.DateOnly) } - { member.EndDate.Format(time.DateOnly) }</span>
-				if mayUpdate {
-					<div hx-include="this">
-						<button
-							class="text-green-800"
-							hx-get={ "/role/" + roleID + "/member?updateMemberID=" + member.MemberID.String() }
-						>Edit</button>
-						<button
-							class="text-red-800"
-							hx-delete={ "/role/" + roleID + "/member/" + member.MemberID.String() }
-							hx-confirm="Are you sure? Prefer to set end date to yesterday"
-						>Remove</button>
-						<button
-							class="text-amber-800"
-							hx-post={ "/role/" + roleID + "/member/" + member.MemberID.String() + "/end" }
-							title="Set role membership end date to yesterday"
-						>End</button>
-					</div>
-				}
 			}
-		}
-		if addNew {
-			<hr class="col-span-full"/>
-			<input autofocus class="adding font-bold" type="text" name="kth-id"/>
-			<span class="adding">
-				<input type="date" name="start-date" value={ time.Now().Format(time.DateOnly) }/> -
-				<input type="date" name="end-date"/>
-			</span>
-			<span>
-				<button
-					class="text-blue-700"
-					hx-post={ "/role/" + roleID + "/member" }
-					hx-include=".adding"
-				>Add</button>
-			</span>
-		}
-		if mayUpdate {
-			<button hx-get={ "/role/" + roleID + "/member?new" } class="bg-slate-300 w-8 h-8">+</button>
-		}
-	</section>
+			if mayUpdate {
+				<button hx-get={ "/role/" + roleID + "/member?new" } class="bg-slate-300 w-8 h-8">+</button>
+			}
+		</section>
+	</div>
 }

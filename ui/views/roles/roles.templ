@@ -153,7 +153,7 @@ templ roleComponent(
 	<h2 class="text-xl">Sub-roles</h2>
 	@subroles.Subroles(role.ID, sr, mayUpdate)
 	<h2 class="text-xl">Members</h2>
-	@members.Members(role.ID, m, mayUpdate, uuid.Nil, false)
+	@members.Members(role.ID, m, uuid.Nil, mayUpdate, false, false)
 	<h2 class="text-xl">Permissions</h2>
 	@permissions.Permissions(role.ID, perms, mayAddPermissions, mayDeleteInSystems)
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (ui *UI) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool, includeIndirect bool) ([]models.Member, error) {
+func (ui *UI) GetRoleMembers(ctx context.Context, id string, includeExpired bool, includeIndirect bool) ([]models.Member, error) {
 	query := `--sql
 		select
 			id, kth_id, modified_by,
@@ -38,7 +38,7 @@ func (ui *UI) GetRoleMembers(ctx context.Context, id string, onlyCurrent bool, i
 		order by kth_id)`
 	}
 
-	rows, err := ui.db.QueryContext(ctx, query, id, !onlyCurrent)
+	rows, err := ui.db.QueryContext(ctx, query, id, includeExpired)
 	if err != nil {
 		return nil, err
 	}

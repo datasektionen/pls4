@@ -34,7 +34,7 @@ func GetRole(ui *service.UI, ctx context.Context, w http.ResponseWriter, r *http
 		slog.Error("Could not get subroles", "error", err, "role_id", roleID)
 		return errors.Error(http.StatusInternalServerError)
 	}
-	members, err := ui.GetRoleMembers(ctx, roleID, true, true)
+	members, err := ui.GetRoleMembers(ctx, roleID, false, true)
 	if err != nil {
 		slog.Error("Could not get role members", "error", err, "role_id", roleID)
 		return errors.Error(http.StatusInternalServerError)
