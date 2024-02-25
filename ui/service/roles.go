@@ -15,7 +15,7 @@ func (ui *UI) ListRoles(ctx context.Context) ([]models.Role, error) {
 	rows, err := ui.db.QueryContext(ctx, `--sql
 		select
 			r.id, r.display_name, r.description,
-			count(rr.subrole_id), count(ru.id)
+			count(distinct rr.subrole_id), count(distinct ru.id)
 		from roles r
 		left join roles_roles rr on rr.superrole_id = r.id
 		left join roles_users ru on ru.role_id = r.id
