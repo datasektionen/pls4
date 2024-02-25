@@ -4,6 +4,8 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/datasektionen/pls4/ui/service"
@@ -47,6 +49,7 @@ func Mount(ui *service.UI) {
 	http.Handle("GET /scope-input", partial(ui, permissions.ScopeInput))
 
 	http.Handle("/login", route(ui, login))
+	http.Handle("/login-callback", route(ui, loginCallback))
 	http.Handle("/logout", route(ui, logout))
 }
 
@@ -66,6 +69,16 @@ func getCtxAndSession(ui *service.UI, w http.ResponseWriter, r *http.Request) (c
 		errors.Error(http.StatusInternalServerError).Render(ctx, w)
 		return nil, service.Session{}
 	}
+	if session.KTHID == "" && r.URL.Path != "/" {
+		returnURL := r.URL.Path
+		if r.Method != http.MethodGet {
+			returnURL = r.Referer()
+		}
+		path := "/login?return-url=" + url.QueryEscape(returnURL)
+		w.Header().Add("hx-redirect", path)
+		http.Redirect(w, r, path, http.StatusUnauthorized)
+		return nil, session
+	}
 
 	return ctx, session
 }
@@ -84,8 +97,8 @@ func page(ui *service.UI, handler func(s *service.UI, ctx context.Context, sessi
 			w.WriteHeader(e.Code)
 		}
 		layout := body()
-		if r.Header.Get("HX-Boosted") != "true" {
-			layout = document(session.DisplayName, ui.LoginFrontendURL())
+		if r.Header.Get("hx-boosted") != "true" {
+			layout = document(session.DisplayName)
 		}
 		if err := layout.Render(templ.WithChildren(ctx, component), w); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -115,7 +128,26 @@ func partial(ui *service.UI, handler func(s *service.UI, ctx context.Context, se
 }
 
 func login(ui *service.UI, w http.ResponseWriter, r *http.Request) {
-	code := r.URL.Query().Get("code")
+	returnURL := r.URL.Query().Get("return-url")
+	host := r.Host
+	// NOTE: this isn't necessarily true, but probably good enough
+	secure := !strings.HasPrefix(host, "localhost")
+	scheme := "http"
+	if secure {
+		scheme += "s"
+	}
+
+	url := ui.LoginFrontendURL() + "/login?callback=" + url.QueryEscape(scheme+"://"+host+"/login-callback?return-url="+url.QueryEscape(returnURL)+"&code=")
+	http.Redirect(w, r, url, http.StatusSeeOther)
+}
+
+func loginCallback(ui *service.UI, w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	code := query.Get("code")
+	returnURL := query.Get("return-url")
+	if returnURL == "" {
+		returnURL = "/"
+	}
 	sessionToken, err := ui.Login(code)
 	if err != nil {
 		// TODO: this could also be bad/stale request
@@ -130,7 +162,7 @@ func login(ui *service.UI, w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, returnURL, http.StatusSeeOther)
 }
 
 func logout(ui *service.UI, w http.ResponseWriter, r *http.Request) {

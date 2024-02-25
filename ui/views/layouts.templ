@@ -1,17 +1,15 @@
 package views
 
-script methone(userID, loginFrontendURL string) {
+script methone(userID string) {
 	window.methone_conf = {
 		system_name: "pls",
 		color_scheme: "purple",
 		login_text: userID ? userID : "Login",
-		login_href: userID ? "/logout" : loginFrontendURL
-			+ "/login?callback="
-			+ encodeURIComponent(window.location.origin + "/login?code="),
+		login_href: userID ? "/logout" : "/login?return-url=" + encodeURIComponent(location.pathname + location.search),
 	};
 }
 
-templ document(userID, loginFrontendURL string) {
+templ document(userID string) {
 	<!DOCTYPE html>
 	<html lang="sv">
 		<head>
@@ -19,7 +17,7 @@ templ document(userID, loginFrontendURL string) {
 			<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>pls - fourth* time's the charm</title>
-			@methone(userID, loginFrontendURL)
+			@methone(userID)
 			<script defer src="https://methone.datasektionen.se/bar.js"></script>
 			<script src="https://cdn.tailwindcss.com"></script>
 			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
@@ -39,7 +37,7 @@ templ document(userID, loginFrontendURL string) {
 
 templ body() {
 	<body hx-boost="true">
-		<div class="h-[50px]" id="methone-container-replace" hx-preserve="true"></div>
+		<div class="h-[50px]" id="methone-container-replace" hx-disable="true" hx-preserve="true"></div>
 		<main class="p-4 max-w-screen-lg mx-auto md:mt-24">
 			{ children... }
 		</main>
