@@ -7,7 +7,7 @@ func Plural(count int) string {
 	return "s"
 }
 
-func Ternary[T any](condition bool, then T, elze T) T {
+func If[T any](condition bool, then T, elze T) T {
 	if condition {
 		return then
 	} else {

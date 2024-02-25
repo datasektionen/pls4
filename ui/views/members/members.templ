@@ -23,7 +23,7 @@ templ Members(roleID string, members []models.Member, toUpdateMemberID uuid.UUID
 				type="checkbox"
 			/>
 		</form>
-		<section class={ "grid grid-cols-[repeat(" + util.Ternary(mayUpdate, "3", "2") + ",auto)] gap-2 items-center p-3" }>
+		<section class={ "grid grid-cols-[repeat(" + util.If(mayUpdate, "3", "2") + ",auto)] gap-2 items-center p-3" }>
 			<p class="font-bold">Name</p>
 			<p class="font-bold">Date range</p>
 			if mayUpdate {

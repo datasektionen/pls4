@@ -17,7 +17,7 @@ templ Permissions(
 	mayDeleteInSystems map[string]struct{},
 ) {
 	<section
-		class={ "grid grid-cols-[auto_1fr_1fr" + util.Ternary(len(mayDeleteInSystems) > 0, "_1fr", "") + "] gap-x-6 gap-y-2 items-center p-3" }
+		class={ "grid grid-cols-[auto_1fr_1fr" + util.If(len(mayDeleteInSystems) > 0, "_1fr", "") + "] gap-x-6 gap-y-2 items-center p-3" }
 		id="permissions"
 		hx-swap="outerHTML"
 	>

@@ -8,7 +8,7 @@ import (
 
 templ Subroles(roleID string, subroles []models.Role, mayUpdate bool) {
 	<section id="subroles">
-		<section class={ "grid grid-cols-" + util.Ternary(mayUpdate, "3", "2") + " gap-2 items-center p-4" }>
+		<section class={ "grid grid-cols-" + util.If(mayUpdate, "3", "2") + " gap-2 items-center p-4" }>
 			<p class="font-bold">Name</p>
 			<p class="font-bold">Members</p>
 			if mayUpdate {

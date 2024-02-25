@@ -13,7 +13,7 @@ import (
 
 templ roleList(roles []models.Role, mayCreate bool, deletable map[string]struct{}) {
 	<h2 class="text-2xl font-bold">Roles</h2>
-	<section class={ "grid grid-cols-[repeat(" + util.Ternary(len(deletable) > 0, "4", "3") + ",auto)] gap-2 items-center p-4" }>
+	<section class={ "grid grid-cols-[repeat(" + util.If(len(deletable) > 0, "4", "3") + ",auto)] gap-2 items-center p-4" }>
 		<p class="font-bold">Name</p>
 		<p class="font-bold">Members</p>
 		<p class="font-bold">Description</p>
