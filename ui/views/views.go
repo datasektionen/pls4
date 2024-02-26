@@ -124,6 +124,10 @@ func partial(ui *service.UI, handler func(ui *service.UI, ctx context.Context, s
 		}
 
 		component := handler(ui, ctx, session, w, r)
+		if component == nil {
+			// Empty response
+			return
+		}
 		if e, ok := component.(errors.ErrorComponent); ok {
 			w.WriteHeader(e.Code)
 		}
