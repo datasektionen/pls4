@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 
@@ -22,16 +23,16 @@ func main() {
 	loginAPIKey := getenv("LOGIN_API_KEY") // "API token for login. Funnily enough this service verifies the token",
 	databaseURL := getenv("DATABASE_URL")
 
-	ctx := context.Background()
-
 	db, err := sql.Open("postgres", databaseURL)
 	if err != nil {
 		panic(err)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	if err := database.Migrate(db, ctx); err != nil {
 		panic(err)
 	}
+	cancel()
 
 	apiService := api.New(db)
 	uiService, err := uiService.New(db, apiService, loginFrontendURL, loginAPIURL, loginAPIKey)
