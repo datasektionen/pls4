@@ -93,3 +93,11 @@ func (ui *UI) MayUpdatePermissionsInSystems(ctx context.Context, kthID string, s
 func (ui *UI) MayAddPermissions(ctx context.Context, kthID string) (bool, error) {
 	return ui.api.UserCheckPermission(ctx, kthID, "pls", "system")
 }
+
+func (ui *UI) MayCreateSystems(ctx context.Context, kthID string) (bool, error) {
+	return ui.api.UserCheckPermission(ctx, kthID, "pls", "manage-systems")
+}
+
+func (ui *UI) MayDeleteSystems(ctx context.Context, kthID string) (bool, error) {
+	return ui.api.UserCheckPermission(ctx, kthID, "pls", "manage-systems")
+}

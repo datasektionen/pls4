@@ -69,19 +69,3 @@ func (ui *UI) GetUserRoles(
 	}
 	return roles, nil
 }
-
-func (ui *UI) GetAllSystems(ctx context.Context) ([]string, error) {
-	rows, err := ui.db.QueryContext(ctx, `--sql
-		select id
-		from systems
-	`)
-	if err != nil {
-		return nil, err
-	}
-	var systems []string
-	for rows.Next() {
-		systems = append(systems, "")
-		rows.Scan(&systems[len(systems)-1])
-	}
-	return systems, nil
-}

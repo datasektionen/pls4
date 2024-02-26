@@ -86,4 +86,5 @@ insert into systems (id) values ('pls');
 insert into permissions (system_id, id, has_scope) values
     ('pls', 'create-role', false),
     ('pls', 'system', true),
-    ('pls', 'role', true);
+    ('pls', 'role', true),
+    ('pls', 'manage-systems', false);

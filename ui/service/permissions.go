@@ -161,6 +161,20 @@ func (ui *UI) GetPermissions(ctx context.Context, system string) ([]models.Permi
 		rows.Scan(&perm.ID, &perm.HasScope)
 		permissions = append(permissions, perm)
 	}
+	if len(permissions) == 0 {
+		res := ui.db.QueryRowContext(ctx, `--sql
+			select count(*)
+			from systems
+			where id = $1
+		`, system)
+		var count int
+		if err := res.Scan(&count); err != nil {
+			return nil, err
+		}
+		if count == 0 {
+			return nil, errors.New("System does not exist")
+		}
+	}
 	return permissions, nil
 }
 

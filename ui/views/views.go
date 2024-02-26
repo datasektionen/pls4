@@ -52,6 +52,12 @@ func Mount(ui *service.UI) {
 
 	http.Handle("GET /system", page(ui, systems.ListSystems))
 	http.Handle("GET /system/{id}", page(ui, systems.GetSystem))
+	http.Handle("POST /system", partial(ui, systems.CreateSystem))
+	http.Handle("DELETE /system/{id}", partial(ui, systems.DeleteSystem))
+	http.Handle("POST /system/{id}/permission", partial(ui, systems.CreatePermission))
+	http.Handle("DELETE /system/{id}/permission/{permissionID}", partial(ui, systems.DeletePermission))
+	http.Handle("POST /system/{id}/permission/{permissionID}/scope", partial(ui, systems.AddScopeToPermission))
+	http.Handle("DELETE /system/{id}/permission/{permissionID}/scope", partial(ui, systems.RemoveScopeFromPermission))
 
 	http.Handle("/login", route(ui, login))
 	http.Handle("/login-callback", route(ui, loginCallback))
