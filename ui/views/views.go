@@ -82,8 +82,11 @@ func getCtxAndSession(ui *service.UI, w http.ResponseWriter, r *http.Request) (c
 			returnURL = r.Referer()
 		}
 		path := "/login?return-url=" + url.QueryEscape(returnURL)
-		w.Header().Add("hx-redirect", path)
-		http.Redirect(w, r, path, http.StatusSeeOther)
+		if r.Header.Get("hx-request") == "true" {
+			w.Header().Add("hx-redirect", path)
+		} else {
+			http.Redirect(w, r, path, http.StatusSeeOther)
+		}
 		return nil, session
 	}
 
