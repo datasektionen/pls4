@@ -16,19 +16,18 @@ type UI struct {
 	loginAPIKey      string
 }
 
-func New(db *sql.DB, api *api.API, loginFrontendURL, loginAPIURL, loginAPIKey string) (*UI, error) {
+func New(ctx context.Context, db *sql.DB, api *api.API, loginFrontendURL, loginAPIURL, loginAPIKey string) *UI {
 	s := &UI{}
 
 	s.api = api
 	s.loginFrontendURL = loginFrontendURL
 	s.loginAPIURL = loginAPIURL
 	s.loginAPIKey = loginAPIKey
-
 	s.db = db
 
-	go s.deleteOldSessionsForever()
+	go s.deleteOldSessionsForever(ctx)
 
-	return s, nil
+	return s
 }
 
 func (ui *UI) LoginFrontendURL() string {

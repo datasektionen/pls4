@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"log/slog"
@@ -13,16 +14,21 @@ type Session struct {
 	DisplayName string
 }
 
-func (ui *UI) deleteOldSessionsForever() {
-	// TODO: context?
+func (ui *UI) deleteOldSessionsForever(ctx context.Context) {
+loop:
 	for {
-		if _, err := ui.db.Exec(`
+		if _, err := ui.db.ExecContext(ctx, `--sql
 			delete from sessions
 			where last_used_at <= now() - interval '1' hour
 		`); err != nil {
 			slog.Error("Could not delete old sessions", "error", err)
 		}
-		time.Sleep(time.Hour)
+		select {
+		case <-time.After(time.Hour):
+			continue
+		case <-ctx.Done():
+			break loop
+		}
 	}
 }
 

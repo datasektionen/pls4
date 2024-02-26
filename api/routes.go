@@ -6,10 +6,10 @@ import (
 	"net/http"
 )
 
-func Mount(api *API) {
-	http.Handle("/api/user/get-permissions", route(api, userGetPermissions))
-	http.Handle("/api/user/check", route(api, userCheckPermission))
-	http.Handle("/api/user/get-scopes", route(api, userGetScopes))
+func Mount(mux *http.ServeMux, api *API) {
+	mux.Handle("/api/user/get-permissions", route(api, userGetPermissions))
+	mux.Handle("/api/user/check", route(api, userCheckPermission))
+	mux.Handle("/api/user/get-scopes", route(api, userGetScopes))
 }
 
 func route(api *API, handler func(api *API, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
@@ -21,8 +21,8 @@ func route(api *API, handler func(api *API, w http.ResponseWriter, r *http.Reque
 func userGetPermissions(api *API, w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var body struct {
-		KTHID      string `json:"kth_id"`
-		System     string `json:"system"`
+		KTHID  string `json:"kth_id"`
+		System string `json:"system"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		w.WriteHeader(http.StatusBadRequest)

@@ -20,50 +20,50 @@ import (
 
 //go:generate templ generate
 
-func Mount(ui *service.UI) {
-	http.Handle("/{$}", page(ui, roles.Index))
+func Mount(mux *http.ServeMux, ui *service.UI) {
+	mux.Handle("/{$}", page(ui, roles.Index))
 
-	http.Handle("GET /role/{id}", page(ui, roles.GetRole))
-	http.Handle("GET /role", partial(ui, roles.CreateRoleForm))
-	http.Handle("POST /role", partial(ui, roles.CreateRole))
-	http.Handle("DELETE /role/{id}", partial(ui, roles.DeleteRole))
+	mux.Handle("GET /role/{id}", page(ui, roles.GetRole))
+	mux.Handle("GET /role", partial(ui, roles.CreateRoleForm))
+	mux.Handle("POST /role", partial(ui, roles.CreateRole))
+	mux.Handle("DELETE /role/{id}", partial(ui, roles.DeleteRole))
 
-	http.Handle("GET /role/{id}/name", partial(ui, roles.RoleNameForm))
-	http.Handle("POST /role/{id}/name", partial(ui, roles.UpdateRoleName))
+	mux.Handle("GET /role/{id}/name", partial(ui, roles.RoleNameForm))
+	mux.Handle("POST /role/{id}/name", partial(ui, roles.UpdateRoleName))
 
-	http.Handle("GET /role/{id}/description", partial(ui, roles.RoleDescriptionForm))
-	http.Handle("POST /role/{id}/description", partial(ui, roles.UpdateRoleDescription))
+	mux.Handle("GET /role/{id}/description", partial(ui, roles.RoleDescriptionForm))
+	mux.Handle("POST /role/{id}/description", partial(ui, roles.UpdateRoleDescription))
 
-	http.Handle("GET /role/{id}/subrole", partial(ui, subroles.RoleSubroleForm))
-	http.Handle("POST /role/{id}/subrole", partial(ui, subroles.RoleAddSubrole))
-	http.Handle("DELETE /role/{id}/subrole/{subroleID}", partial(ui, subroles.RoleRemoveSubrole))
+	mux.Handle("GET /role/{id}/subrole", partial(ui, subroles.RoleSubroleForm))
+	mux.Handle("POST /role/{id}/subrole", partial(ui, subroles.RoleAddSubrole))
+	mux.Handle("DELETE /role/{id}/subrole/{subroleID}", partial(ui, subroles.RoleRemoveSubrole))
 
-	http.Handle("GET /role/{id}/member", partial(ui, members.GetRoleMembers))
-	http.Handle("POST /role/{id}/member", partial(ui, members.RoleAddMember))
-	http.Handle("POST /role/{id}/member/{memberID}", partial(ui, members.RoleUpdateMember))
-	http.Handle("POST /role/{id}/member/{memberID}/end", partial(ui, members.RoleEndMember))
-	http.Handle("DELETE /role/{id}/member/{memberID}", partial(ui, members.RoleRemoveMember))
+	mux.Handle("GET /role/{id}/member", partial(ui, members.GetRoleMembers))
+	mux.Handle("POST /role/{id}/member", partial(ui, members.RoleAddMember))
+	mux.Handle("POST /role/{id}/member/{memberID}", partial(ui, members.RoleUpdateMember))
+	mux.Handle("POST /role/{id}/member/{memberID}/end", partial(ui, members.RoleEndMember))
+	mux.Handle("DELETE /role/{id}/member/{memberID}", partial(ui, members.RoleRemoveMember))
 
-	http.Handle("POST /role/{id}/permission", partial(ui, permissions.RoleAddPermission))
-	http.Handle("DELETE /role/{id}/permission/{instanceID}", partial(ui, permissions.RoleRemovePermission))
-	http.Handle("GET /role/{id}/add-permission-form", partial(ui, permissions.AddPermissionForm))
-	http.Handle("GET /permission-select", partial(ui, permissions.PermissionSelect))
-	http.Handle("GET /scope-input", partial(ui, permissions.ScopeInput))
+	mux.Handle("POST /role/{id}/permission", partial(ui, permissions.RoleAddPermission))
+	mux.Handle("DELETE /role/{id}/permission/{instanceID}", partial(ui, permissions.RoleRemovePermission))
+	mux.Handle("GET /role/{id}/add-permission-form", partial(ui, permissions.AddPermissionForm))
+	mux.Handle("GET /permission-select", partial(ui, permissions.PermissionSelect))
+	mux.Handle("GET /scope-input", partial(ui, permissions.ScopeInput))
 
-	http.Handle("GET /system", page(ui, systems.ListSystems))
-	http.Handle("GET /system/{id}", page(ui, systems.GetSystem))
-	http.Handle("POST /system", partial(ui, systems.CreateSystem))
-	http.Handle("DELETE /system/{id}", partial(ui, systems.DeleteSystem))
-	http.Handle("POST /system/{id}/permission", partial(ui, systems.CreatePermission))
-	http.Handle("DELETE /system/{id}/permission/{permissionID}", partial(ui, systems.DeletePermission))
-	http.Handle("POST /system/{id}/permission/{permissionID}/scope", partial(ui, systems.AddScopeToPermission))
-	http.Handle("DELETE /system/{id}/permission/{permissionID}/scope", partial(ui, systems.RemoveScopeFromPermission))
+	mux.Handle("GET /system", page(ui, systems.ListSystems))
+	mux.Handle("GET /system/{id}", page(ui, systems.GetSystem))
+	mux.Handle("POST /system", partial(ui, systems.CreateSystem))
+	mux.Handle("DELETE /system/{id}", partial(ui, systems.DeleteSystem))
+	mux.Handle("POST /system/{id}/permission", partial(ui, systems.CreatePermission))
+	mux.Handle("DELETE /system/{id}/permission/{permissionID}", partial(ui, systems.DeletePermission))
+	mux.Handle("POST /system/{id}/permission/{permissionID}/scope", partial(ui, systems.AddScopeToPermission))
+	mux.Handle("DELETE /system/{id}/permission/{permissionID}/scope", partial(ui, systems.RemoveScopeFromPermission))
 
-	http.Handle("/login", route(ui, login))
-	http.Handle("/login-callback", route(ui, loginCallback))
-	http.Handle("/logout", route(ui, logout))
+	mux.Handle("/login", route(ui, login))
+	mux.Handle("/login-callback", route(ui, loginCallback))
+	mux.Handle("/logout", route(ui, logout))
 
-	http.Handle("/fuzzyfile", route(ui, fuzzyfile))
+	mux.Handle("/fuzzyfile", route(ui, fuzzyfile))
 }
 
 func route(ui *service.UI, handler func(s *service.UI, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {

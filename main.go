@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -28,23 +30,42 @@ func main() {
 		panic(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	if err := database.Migrate(db, ctx); err != nil {
-		panic(err)
+	{
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		if err := database.Migrate(db, ctx); err != nil {
+			panic(err)
+		}
+		cancel()
 	}
-	cancel()
+
+	ctx, cancel := context.WithCancel(context.Background())
 
 	apiService := api.New(db)
-	uiService, err := uiService.New(db, apiService, loginFrontendURL, loginAPIURL, loginAPIKey)
-	if err != nil {
-		panic(err)
-	}
+	uiService := uiService.New(ctx, db, apiService, loginFrontendURL, loginAPIURL, loginAPIKey)
 
-	api.Mount(apiService)
-	uiViews.Mount(uiService)
+	mux := http.NewServeMux()
+	api.Mount(mux, apiService)
+	uiViews.Mount(mux, uiService)
 
+	server := http.Server{Addr: address, Handler: mux}
+
+	beginShutdown := make(chan os.Signal)
+	signal.Notify(beginShutdown, os.Interrupt)
+	shutdownComplete := make(chan struct{})
+	go func() {
+		<-beginShutdown
+		cancel()
+		server.Shutdown(context.Background())
+		shutdownComplete <- struct{}{}
+	}()
 	slog.Info("Started", "address", address)
-	slog.Error("Server crashed", "error", http.ListenAndServe(address, nil))
+	if err := server.ListenAndServe(); errors.Is(err, http.ErrServerClosed) {
+		slog.Info("Shutting down...")
+		<-shutdownComplete
+		slog.Info("Clean shutdown finished")
+	} else {
+		slog.Error("Server crashed", "error", err)
+	}
 }
 
 func getenv(key string, fallback ...string) string {
