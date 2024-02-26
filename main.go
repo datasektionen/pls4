@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"flag"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,28 +16,11 @@ import (
 )
 
 func main() {
-	var address, loginFrontendURL, loginAPIURL, loginAPIKey, hodisURL, databaseURL string
-	flag.StringVar(&address, "address",
-		envOr("ADDRESS", "0.0.0.0:3000"),
-		"The address to listen to requests on",
-	)
-	flag.StringVar(&loginFrontendURL, "login-frontend-url",
-		os.Getenv("LOGIN_FRONTEND_URL"),
-		"URL to login frontend",
-	)
-	flag.StringVar(&loginAPIURL, "login-api-url",
-		os.Getenv("LOGIN_API_URL"),
-		"URL to login api",
-	)
-	flag.StringVar(&loginAPIKey, "login-api-key",
-		os.Getenv("LOGIN_API_KEY"),
-		"API token for login. Funnily enough this service verifies the token",
-	)
-	flag.StringVar(&databaseURL, "database-url",
-		os.Getenv("DATABASE_URL"),
-		"URL to the postgresql database to use",
-	)
-	flag.Parse()
+	address := getenv("ADDRESS", "0.0.0.0:3000")
+	loginFrontendURL := getenv("LOGIN_FRONTEND_URL")
+	loginAPIURL := getenv("LOGIN_API_URL")
+	loginAPIKey := getenv("LOGIN_API_KEY") // "API token for login. Funnily enough this service verifies the token",
+	databaseURL := getenv("DATABASE_URL")
 
 	ctx := context.Background()
 
@@ -52,7 +34,7 @@ func main() {
 	}
 
 	apiService := api.New(db)
-	uiService, err := uiService.New(db, apiService, loginFrontendURL, loginAPIURL, loginAPIKey, hodisURL)
+	uiService, err := uiService.New(db, apiService, loginFrontendURL, loginAPIURL, loginAPIKey)
 	if err != nil {
 		panic(err)
 	}
@@ -64,10 +46,16 @@ func main() {
 	slog.Error("Server crashed", "error", http.ListenAndServe(address, nil))
 }
 
-func envOr(key string, fallback string) string {
+func getenv(key string, fallback ...string) string {
+	if len(fallback) > 1 {
+		panic("Supplied multiple fallbacks")
+	}
 	value, ok := os.LookupEnv(key)
 	if !ok {
-		return fallback
+		if len(fallback) == 0 {
+			panic("Missing required environment variable $" + key)
+		}
+		return fallback[0]
 	}
 	return value
 }
